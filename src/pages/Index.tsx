@@ -6,6 +6,7 @@ import SurveyForm from "@/components/survey/SurveyForm";
 import ResultsView from "@/components/survey/ResultsView";
 import { classifyArchetype } from "@/data/archetypes";
 import { useSession } from "@/hooks/useSession";
+import type { AISummary } from "@/hooks/useSession";
 import type { SurveyAnswers } from "@/data/surveyQuestions";
 import type { Archetype } from "@/data/archetypes";
 import { Loader2 } from "lucide-react";
@@ -20,11 +21,15 @@ const Index = () => {
     saveUserInfo,
     completeSurvey,
     resetSession,
+    generateResults,
   } = useSession();
 
   const [phase, setPhase] = useState<Phase>("welcome");
   const [archetype, setArchetype] = useState<Archetype | null>(null);
   const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiSummary, setAiSummary] = useState<AISummary | null>(null);
+  const [certificateUrl, setCertificateUrl] = useState<string | null>(null);
 
   // ── Restore phase from session state ─────────────────────────────────
   useEffect(() => {
@@ -36,6 +41,22 @@ const Index = () => {
       setArchetype(result);
       setPromoCode(session.promoCode ?? null);
       setPhase("results");
+
+      // Restore cached AI results or generate them
+      if (session.aiSummary) {
+        setAiSummary(session.aiSummary);
+        setCertificateUrl(session.certificateUrl ?? null);
+      } else {
+        // Trigger background generation
+        setAiLoading(true);
+        generateResults().then((res) => {
+          if (res) {
+            setAiSummary(res.aiSummary);
+            setCertificateUrl(res.certificateUrl ?? null);
+          }
+          setAiLoading(false);
+        });
+      }
     } else if (session.currentStep > 0 && Object.keys(session.answers).length > 0) {
       // Has progress — resume survey
       if (session.name) {
@@ -81,13 +102,25 @@ const Index = () => {
       setPromoCode(code);
       setPhase("results");
       window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // Trigger AI summary + certificate generation in background
+      setAiLoading(true);
+      generateResults().then((res) => {
+        if (res) {
+          setAiSummary(res.aiSummary);
+          setCertificateUrl(res.certificateUrl ?? null);
+        }
+        setAiLoading(false);
+      });
     },
-    [completeSurvey]
+    [completeSurvey, generateResults]
   );
 
   const handleRetake = useCallback(() => {
     setArchetype(null);
     setPromoCode(null);
+    setAiSummary(null);
+    setCertificateUrl(null);
     resetSession();
   }, [resetSession]);
 
@@ -208,6 +241,10 @@ const Index = () => {
                   onRetake={handleRetake}
                   promoCode={promoCode}
                   sessionId={session?.sessionId}
+                  aiSummary={aiSummary}
+                  certificateUrl={certificateUrl}
+                  aiLoading={aiLoading}
+                  userName={session?.name}
                 />
               </motion.div>
             )}

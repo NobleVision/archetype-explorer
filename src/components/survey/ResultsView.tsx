@@ -2,8 +2,11 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Lightbulb, RotateCcw, Share2, Copy, Check, Users } from "lucide-react";
 import type { Archetype } from "@/data/archetypes";
+import type { AISummary } from "@/hooks/useSession";
 import { Button } from "@/components/ui/button";
 import PromoCodeDisplay from "./PromoCodeDisplay";
+import AISummaryCard from "./AISummaryCard";
+import CertificateCard from "./CertificateCard";
 import Confetti from "./Confetti";
 import { useToast } from "@/hooks/use-toast";
 
@@ -12,9 +15,22 @@ interface ResultsViewProps {
   onRetake: () => void;
   promoCode?: string | null;
   sessionId?: string;
+  aiSummary?: AISummary | null;
+  certificateUrl?: string | null;
+  aiLoading?: boolean;
+  userName?: string;
 }
 
-const ResultsView = ({ archetype, onRetake, promoCode, sessionId }: ResultsViewProps) => {
+const ResultsView = ({
+  archetype,
+  onRetake,
+  promoCode,
+  sessionId,
+  aiSummary,
+  certificateUrl,
+  aiLoading = false,
+  userName,
+}: ResultsViewProps) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [referralCopied, setReferralCopied] = useState(false);
   const { toast } = useToast();
@@ -163,6 +179,21 @@ const ResultsView = ({ archetype, onRetake, promoCode, sessionId }: ResultsViewP
         </p>
       </motion.div>
 
+      {/* ── AI Executive Summary ───────────────────────────────────────── */}
+      <AISummaryCard
+        summary={aiSummary ?? null}
+        loading={aiLoading}
+        userName={userName}
+      />
+
+      {/* ── Certificate ────────────────────────────────────────────────── */}
+      <CertificateCard
+        certificateUrl={certificateUrl ?? null}
+        loading={aiLoading}
+        userName={userName}
+        archetypeName={archetype.name}
+      />
+
       {/* ── Promo Code Section ────────────────────────────────────────── */}
       {promoCode && (
         <div className="mb-8">
@@ -202,8 +233,8 @@ const ResultsView = ({ archetype, onRetake, promoCode, sessionId }: ResultsViewP
               size="sm"
               onClick={handleCopyReferral}
               className={`gap-1.5 text-xs transition-all ${referralCopied
-                  ? "text-green-500 border-green-500/30"
-                  : "hover:border-accent"
+                ? "text-green-500 border-green-500/30"
+                : "hover:border-accent"
                 }`}
             >
               {referralCopied ? (
@@ -246,3 +277,4 @@ const ResultsView = ({ archetype, onRetake, promoCode, sessionId }: ResultsViewP
 };
 
 export default ResultsView;
+

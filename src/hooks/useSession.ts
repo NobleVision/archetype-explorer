@@ -16,6 +16,14 @@ const USER_INFO_KEY = "nf_survey_user_info";
 // Use relative URLs in production (Vercel), absolute in dev
 const API_BASE = import.meta.env.DEV ? "http://localhost:3001/api" : "/api";
 
+export interface AISummary {
+    headline: string;
+    summary: string;
+    strengths: string[];
+    nextSteps: string[];
+    encouragement: string;
+}
+
 export interface SessionData {
     sessionId: string;
     name?: string;
@@ -25,6 +33,8 @@ export interface SessionData {
     isCompleted: boolean;
     promoCode?: string;
     archetypeResult?: string;
+    aiSummary?: AISummary;
+    certificateUrl?: string;
 }
 
 export function useSession() {
@@ -48,6 +58,9 @@ export function useSession() {
                         const res = await fetch(`${API_BASE}/session?id=${existingId}`);
                         if (res.ok) {
                             const data = await res.json();
+                            const parsedAiSummary = data.ai_summary
+                                ? (typeof data.ai_summary === 'string' ? JSON.parse(data.ai_summary) : data.ai_summary)
+                                : undefined;
                             const restored: SessionData = {
                                 sessionId: data.session_id,
                                 name: data.name || undefined,
@@ -57,6 +70,8 @@ export function useSession() {
                                 isCompleted: data.is_completed || false,
                                 promoCode: data.promo_code || undefined,
                                 archetypeResult: data.archetype_result || undefined,
+                                aiSummary: parsedAiSummary,
+                                certificateUrl: data.certificate_url || undefined,
                             };
                             setSession(restored);
                             setLoading(false);
@@ -239,6 +254,52 @@ export function useSession() {
         }, 100);
     }, []);
 
+    // ── Generate AI results (async, post-completion) ─────────────────
+    const generateResults = useCallback(
+        async () => {
+            if (!session || !session.isCompleted) return null;
+
+            // Return cached if already generated
+            if (session.aiSummary && session.certificateUrl) {
+                return {
+                    aiSummary: session.aiSummary,
+                    certificateUrl: session.certificateUrl,
+                };
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/generate-results`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ sessionId: session.sessionId }),
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    const aiSummary = data.aiSummary as AISummary;
+                    const certificateUrl = data.certificateUrl as string | null;
+
+                    setSession((prev) =>
+                        prev
+                            ? {
+                                ...prev,
+                                aiSummary,
+                                certificateUrl: certificateUrl || undefined,
+                            }
+                            : prev
+                    );
+
+                    return { aiSummary, certificateUrl };
+                }
+            } catch {
+                // Silently fail — results are supplementary
+            }
+
+            return null;
+        },
+        [session]
+    );
+
     return {
         session,
         loading,
@@ -247,5 +308,6 @@ export function useSession() {
         saveUserInfo,
         completeSurvey,
         resetSession,
+        generateResults,
     };
 }

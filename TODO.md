@@ -140,11 +140,11 @@ Gaps, dead code, and missing functionality identified during codebase review.
 
 ## 4. Integration Tasks (Remaining Phases)
 
-### Phase 4 — AI Executive Summary & Certificate
-- [ ] Generate personalized AI summary using OpenAI/Z.ai based on archetype + answers
-- [ ] Create branded certificate image via Cloudinary text overlay
-- [ ] Store certificate URL and AI summary in `survey_sessions` table
-- [ ] Display certificate and summary in `ResultsView`
+### Phase 4 — AI Executive Summary & Certificate ✅ COMPLETED
+- [x] Generate personalized AI summary using OpenAI based on archetype + answers
+- [x] Create branded certificate image via Cloudinary text overlay
+- [x] Store certificate URL and AI summary in `survey_sessions` table
+- [x] Display certificate and summary in `ResultsView`
 
 ### Phase 5 — Points System Dashboard (NuFounders Main App)
 - [ ] Build promo code redemption UI component on the Dashboard page
