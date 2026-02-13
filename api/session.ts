@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createSession, getSession, saveAnswers, saveUserInfo } from "./lib/db";
+import { createSession, getSession, saveAnswers, saveUserInfo } from "./lib/db.js";
 import { nanoid } from "nanoid";
 
 /**

@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { getSession, updateSession } from "./lib/db";
-import { generateAISummary } from "./lib/ai";
-import { generateCertificateUrl } from "./lib/certificate";
+import { getSession, updateSession } from "./lib/db.js";
+import { generateAISummary } from "./lib/ai.js";
+import { generateCertificateUrl } from "./lib/certificate.js";
 
 /**
  * POST /api/generate-results

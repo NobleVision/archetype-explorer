@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { completeSession, createPromoCode } from "./lib/db";
-import { generatePromoCode } from "./lib/promo";
+import { completeSession, createPromoCode } from "./lib/db.js";
+import { generatePromoCode } from "./lib/promo.js";
 
 /**
  * POST /api/complete
