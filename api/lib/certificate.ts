@@ -2,37 +2,34 @@
  * api/lib/certificate.ts — Cloudinary-based certificate image generation.
  *
  * Uses Cloudinary's URL-based transformations to overlay text on a
- * certificate template. No SDK required — we just construct the URL.
+ * solid-color canvas. Emoji characters are NOT supported by Cloudinary
+ * text overlays, so we use text labels only.
  *
- * Strategy:
- * 1. Define a base certificate template image uploaded to Cloudinary
- * 2. Add text overlays for: name, archetype, date, headline
- * 3. Return the generated URL — Cloudinary renders it on-the-fly
- *
- * If no base template exists, we generate a certificate using Cloudinary's
- * blank canvas + styled text overlays.
+ * URL length is kept minimal — Cloudinary URLs must not be excessively
+ * long or the CDN rejects them.
  */
 
 interface CertificateInput {
     name: string;
     archetypeName: string;
-    archetypeEmoji: string;
+    archetypeEmoji: string; // kept in interface but not rendered
     archetypeHeadline: string;
     completedDate: string; // ISO string
 }
 
-// Cloudinary text encoding — must URL-encode special characters
-function encodeText(text: string): string {
-    return encodeURIComponent(text)
-        .replace(/%20/g, "%20")
-        .replace(/%2C/g, ",")
-        .replace(/\(/g, "%28")
-        .replace(/\)/g, "%29");
+/**
+ * Cloudinary text overlay encoding.
+ * Spaces in text overlays use %20, and certain chars must be escaped.
+ */
+function ct(text: string): string {
+    return text
+        .replace(/,/g, "%2C")
+        .replace(/\//g, "%2F");
 }
 
 /**
  * Generates a certificate URL using Cloudinary transformations.
- * This approach uses a blank canvas with styled text overlays.
+ * Minimal overlays to keep URL under CDN limits.
  */
 export function generateCertificateUrl(input: CertificateInput): string {
     const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
@@ -42,76 +39,47 @@ export function generateCertificateUrl(input: CertificateInput): string {
 
     const formattedDate = new Date(input.completedDate).toLocaleDateString(
         "en-US",
-        {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        }
+        { year: "numeric", month: "long", day: "numeric" }
     );
 
-    // Truncate headline if too long for the certificate
-    const headline =
-        input.archetypeHeadline.length > 80
-            ? input.archetypeHeadline.substring(0, 77) + "..."
-            : input.archetypeHeadline;
+    // Truncate name/headline to keep URL short
+    const name = input.name.length > 40
+        ? input.name.substring(0, 37) + "..."
+        : input.name;
 
-    // Build transformation chain for a 1200x630 certificate (OG image size)
-    const transformations = [
-        // Base canvas: dark gradient background
-        "w_1200,h_630,c_fill,b_rgb:0f0f1a",
+    const archetype = input.archetypeName.length > 50
+        ? input.archetypeName.substring(0, 47) + "..."
+        : input.archetypeName;
 
-        // Top-left NuFounders branding text
-        `l_text:Arial_18_bold:${encodeText("NuFounders")},co_rgb:e2b747,g_north_west,x_60,y_40`,
-
-        // Certificate title
-        `l_text:Arial_14_bold:${encodeText("CAREER ARCHETYPE CERTIFICATE")},co_rgb:a0a0b0,g_north,y_50`,
-
-        // Archetype emoji (large)
-        `l_text:Arial_56:${encodeText(input.archetypeEmoji)},g_center,y_-120`,
-
-        // "This certifies that"
-        `l_text:Arial_14:${encodeText("This certifies that")},co_rgb:a0a0b0,g_center,y_-60`,
-
-        // User name (large, gold)
-        `l_text:Arial_36_bold:${encodeText(input.name)},co_rgb:e2b747,g_center,y_-20`,
-
-        // "has been identified as"
-        `l_text:Arial_14:${encodeText("has been identified as a")},co_rgb:a0a0b0,g_center,y_30`,
-
-        // Archetype name (large, white)
-        `l_text:Arial_28_bold:${encodeText(input.archetypeName)},co_rgb:ffffff,g_center,y_70`,
-
-        // Headline (smaller, muted)
-        `l_text:Arial_13:${encodeText(headline)},co_rgb:a0a0b0,g_center,y_115,w_800,c_fit`,
-
-        // Date
-        `l_text:Arial_12:${encodeText(formattedDate)},co_rgb:808090,g_south,y_50`,
-
-        // Bottom tagline
-        `l_text:Arial_10:${encodeText("nufounders.noblevision.com")},co_rgb:606070,g_south,y_30`,
+    // Build minimal transformation chain — 1200x630 (OG image dimensions)
+    // Using pipe-separated chained transformations to keep URL shorter
+    const t = [
+        // Base: solid dark canvas
+        "b_rgb:0f0f1a,c_scale,w_1200,h_630",
+        // NuFounders branding (top-left, gold)
+        `l_text:arial_20_bold:${ct("NuFounders")},co_rgb:e2b747,g_north_west,x_50,y_35`,
+        // Title label
+        `l_text:arial_12_bold:${ct("CAREER ARCHETYPE CERTIFICATE")},co_rgb:999999,g_north,y_45`,
+        // "This certifies that" label
+        `l_text:arial_15:${ct("This certifies that")},co_rgb:bbbbbb,g_center,y_-80`,
+        // User name — Large, gold
+        `l_text:arial_38_bold:${ct(name)},co_rgb:e2b747,g_center,y_-30`,
+        // "has been identified as a"
+        `l_text:arial_15:${ct("has been identified as a")},co_rgb:bbbbbb,g_center,y_25`,
+        // Archetype name — Large, white
+        `l_text:arial_32_bold:${ct(archetype)},co_rgb:ffffff,g_center,y_75`,
+        // Date (bottom)
+        `l_text:arial_13:${ct(formattedDate)},co_rgb:777777,g_south,y_40`,
     ].join("/");
 
-    // Use Cloudinary's built-in 'sample' image as base — the background fill overwrites it
-    return `https://res.cloudinary.com/${cloudName}/image/upload/${transformations}/sample`;
+    return `https://res.cloudinary.com/${cloudName}/image/upload/${t}/sample`;
 }
 
 /**
- * Alternative: Upload a dynamically generated certificate using the Cloudinary Upload API.
- * This creates a persistent, shareable URL.
+ * Alternative async wrapper (for future Cloudinary Upload API usage).
  */
 export async function uploadCertificate(
     input: CertificateInput
 ): Promise<string> {
-    const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET;
-
-    if (!cloudName || !apiKey || !apiSecret) {
-        // Fallback to URL-based generation
-        return generateCertificateUrl(input);
-    }
-
-    // For the initial implementation, use the URL-based approach
-    // This avoids needing to upload a base image first
     return generateCertificateUrl(input);
 }
