@@ -188,10 +188,11 @@ const ResultsView = ({
 
       {/* ── Certificate ────────────────────────────────────────────────── */}
       <CertificateCard
-        certificateUrl={certificateUrl ?? null}
         loading={aiLoading}
         userName={userName}
         archetypeName={archetype.name}
+        archetypeEmoji={archetype.emoji}
+        headline={archetype.headline}
       />
 
       {/* ── Promo Code Section ────────────────────────────────────────── */}

@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { getSession, updateSession } from "./lib/db.js";
 import { generateAISummary } from "./lib/ai.js";
-import { generateCertificateUrl } from "./lib/certificate.js";
 
 /**
  * POST /api/generate-results
@@ -103,26 +102,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             };
         }
 
-        // 3. Generate certificate URL
-        let certificateUrl;
+        // 3. Certificate is now rendered client-side — no Cloudinary needed
+
+        // 4. Persist AI summary to database
+        //    Auto-fix: widen certificate_url if still varchar(500)
         try {
-            certificateUrl = generateCertificateUrl({
-                name: userName,
-                archetypeName: archetypeData.name || s.archetype_result,
-                archetypeEmoji: archetypeData.emoji || "🏆",
-                archetypeHeadline: archetypeData.headline || "",
-                completedDate: s.completed_at || new Date().toISOString(),
-            });
-        } catch (err: any) {
-            console.error("[generate-results] Certificate generation failed:", err.message);
-            certificateUrl = null;
+            const { neon } = await import("@neondatabase/serverless");
+            const sql = neon(process.env.DATABASE_URL!);
+            try {
+                await sql(`ALTER TABLE survey_sessions ALTER COLUMN certificate_url TYPE text`);
+            } catch {
+                // Already text — ignore
+            }
+        } catch {
+            // Module or connection issue — non-fatal
         }
 
-        // 4. Persist to database
         try {
             await updateSession(sessionId, {
                 aiSummary: JSON.stringify(aiSummary),
-                certificateUrl: certificateUrl || undefined,
             });
         } catch (err: any) {
             console.error("[generate-results] DB update failed:", err.message);
@@ -133,7 +131,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             success: true,
             cached: false,
             aiSummary,
-            certificateUrl,
         });
     } catch (err: any) {
         console.error("[/api/generate-results] Error:", err);
