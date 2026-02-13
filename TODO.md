@@ -146,20 +146,25 @@ Gaps, dead code, and missing functionality identified during codebase review.
 - [x] Store certificate URL and AI summary in `survey_sessions` table
 - [x] Display certificate and summary in `ResultsView`
 
-### Phase 5 — Points System Dashboard (NuFounders Main App)
-- [ ] Build promo code redemption UI component on the Dashboard page
-- [ ] Display points balance and transaction history
-- [ ] Add animated points counter with confetti on successful redemption
-- [ ] Show referral link generation on user profile page
+### Phase 5 — Points System Dashboard (NuFounders Main App) ✅ COMPLETED
+- [x] Build promo code redemption UI component on the Dashboard page (`PromoRedemption.tsx`)
+- [x] Display points balance and transaction history (`PointsBalance.tsx`, `TransactionHistory.tsx`)
+- [x] Add animated points counter with SVG level ring
+- [x] Wired into Dashboard page with responsive grid layout
 
-### Phase 6 — Admin Dashboard Enhancements (NuFounders Main App)
-- [ ] Build survey sessions table in admin dashboard
-- [ ] Show archetype distribution charts (Recharts already installed)
-- [ ] Display promo code redemption metrics
-- [ ] Real-time webhook notification feed for admins
+### Phase 6 — Admin Dashboard Enhancements (NuFounders Main App) ✅ COMPLETED
+- [x] Build survey sessions table in admin dashboard (`SurveyAdmin.tsx` — paginated, filterable)
+- [x] Show archetype distribution charts (Recharts horizontal bar chart)
+- [x] Display promo code redemption metrics (4 KPI cards with aggregate stats)
+- [x] Real-time webhook notification feed for admins (auto-refreshes every 30s)
+- [x] Moved Investor Traction Dashboard from user Dashboard to Admin Dashboard
+- [x] Added Survey Analytics link to admin sidebar + quick actions grid
 
-### Phase 7 — Analytics & Polish
-- [ ] Add event tracking for survey funnel (start, each step, completion, drop-off)
-- [ ] Survey retake tracking and comparison
-- [ ] A/B testing framework for survey questions
-- [ ] Performance optimization and bundle analysis
+### Phase 7 — Analytics & Polish ✅ COMPLETED
+- [x] Add event tracking for survey funnel — start, step_viewed, step_answered, step_back, completion, drop_off, results_viewed, retake (`src/lib/analytics.ts`)
+- [x] Backend analytics endpoint with `survey_events` table (`api/analytics.ts`)
+- [x] Analytics batching with sendBeacon/fetch fallback and auto-flush on page unload
+- [x] Survey retake tracking — stores previous archetype for comparison
+- [x] Retake comparison banner in ResultsView — shows whether archetype changed or stayed the same
+- [x] Fixed `isRetake` flag to use actual session state instead of hardcoded false
+

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Lightbulb, RotateCcw, Share2, Copy, Check, Users } from "lucide-react";
+import { Lightbulb, RotateCcw, Share2, Copy, Check, Users, RefreshCw } from "lucide-react";
 import type { Archetype } from "@/data/archetypes";
 import type { AISummary } from "@/hooks/useSession";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ interface ResultsViewProps {
   certificateUrl?: string | null;
   aiLoading?: boolean;
   userName?: string;
+  previousArchetype?: string;
 }
 
 const ResultsView = ({
@@ -30,6 +31,7 @@ const ResultsView = ({
   certificateUrl,
   aiLoading = false,
   userName,
+  previousArchetype,
 }: ResultsViewProps) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [referralCopied, setReferralCopied] = useState(false);
@@ -72,6 +74,35 @@ const ResultsView = ({
     <div className="w-full max-w-3xl mx-auto">
       {/* Confetti celebration */}
       <Confetti active={showConfetti} />
+
+      {/* Retake comparison banner */}
+      {previousArchetype && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className={`mb-6 rounded-xl px-5 py-4 border ${previousArchetype === archetype.id
+            ? "bg-accent/5 border-accent/20"
+            : "bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-800/30"
+            }`}
+        >
+          <div className="flex items-center gap-3">
+            <RefreshCw className="w-5 h-5 shrink-0 text-accent" />
+            <div>
+              <p className="text-sm font-semibold">
+                {previousArchetype === archetype.id
+                  ? "Your archetype hasn't changed!"
+                  : "Your archetype evolved!"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {previousArchetype === archetype.id
+                  ? `You're consistently a ${archetype.name}. Your path is clear!`
+                  : `Previously: ${previousArchetype.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())} → Now: ${archetype.name}`}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Emoji + Archetype Label */}
       <motion.div

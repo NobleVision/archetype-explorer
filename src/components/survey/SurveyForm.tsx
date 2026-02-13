@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ArrowLeft, AlertCircle } from "lucide-react";
 import { surveyQuestions, type SurveyAnswers } from "@/data/surveyQuestions";
+import { trackStepViewed, trackStepAnswered, trackStepBack } from "@/lib/analytics";
 import ProgressBar from "./ProgressBar";
 import OptionCard from "./OptionCard";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ interface SurveyFormProps {
   initialAnswers?: SurveyAnswers;
   initialStep?: number;
   onSaveProgress?: (answers: SurveyAnswers, step: number) => void;
+  sessionId?: string;
 }
 
 const SurveyForm = ({
@@ -30,6 +32,7 @@ const SurveyForm = ({
   initialAnswers,
   initialStep,
   onSaveProgress,
+  sessionId,
 }: SurveyFormProps) => {
   const [currentStep, setCurrentStep] = useState(initialStep ?? 0);
   const [answers, setAnswers] = useState<SurveyAnswers>(initialAnswers ?? {});
@@ -47,7 +50,11 @@ const SurveyForm = ({
     if (question?.id === "employment_status" && answers[question.id] === "other") {
       setOtherText((answers[question.id + "_other"] as string) || "");
     }
-  }, [currentStep, answers]);
+    // Track step view
+    if (sessionId && question) {
+      trackStepViewed(sessionId, currentStep, question.id);
+    }
+  }, [currentStep, sessionId]);
 
   const question = surveyQuestions[currentStep];
   const isLastStep = currentStep === surveyQuestions.length - 1;
@@ -73,6 +80,11 @@ const SurveyForm = ({
           : !!currentAnswer;
 
   const handleSelect = (value: string) => {
+    // Track answer selection
+    if (sessionId) {
+      trackStepAnswered(sessionId, currentStep, question.id, value);
+    }
+
     if (question.type === "multi") {
       const current = (answers[question.id] as string[]) || [];
       const max = question.maxSelections || Infinity;
@@ -152,6 +164,7 @@ const SurveyForm = ({
 
   const handleBack = () => {
     if (currentStep > 0) {
+      if (sessionId) trackStepBack(sessionId, currentStep, question.id);
       setEmailError(null);
       setDirection(-1);
       setCurrentStep(getPrevStep(currentStep));

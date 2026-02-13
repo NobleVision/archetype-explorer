@@ -8,8 +8,16 @@ import { classifyArchetype } from "@/data/archetypes";
 import { useSession } from "@/hooks/useSession";
 import type { AISummary } from "@/hooks/useSession";
 import type { SurveyAnswers } from "@/data/surveyQuestions";
+import { surveyQuestions } from "@/data/surveyQuestions";
 import type { Archetype } from "@/data/archetypes";
 import { Loader2 } from "lucide-react";
+import {
+  trackSurveyStart,
+  trackSurveyCompleted,
+  trackSurveyRetake,
+  trackResultsViewed,
+  trackDropOff,
+} from "@/lib/analytics";
 
 type Phase = "welcome" | "user-info" | "survey" | "results";
 
@@ -69,8 +77,9 @@ const Index = () => {
 
   // ── Phase handlers ───────────────────────────────────────────────────
   const handleStart = useCallback(() => {
+    if (session?.sessionId) trackSurveyStart(session.sessionId);
     setPhase("user-info");
-  }, []);
+  }, [session?.sessionId]);
 
   const handleUserInfoSubmit = useCallback(
     async (name: string, email?: string) => {
@@ -103,6 +112,9 @@ const Index = () => {
       setPhase("results");
       window.scrollTo({ top: 0, behavior: "smooth" });
 
+      // Track completion
+      if (session?.sessionId) trackSurveyCompleted(session.sessionId, result.id);
+
       // Trigger AI summary + certificate generation in background
       setAiLoading(true);
       generateResults().then((res) => {
@@ -117,12 +129,31 @@ const Index = () => {
   );
 
   const handleRetake = useCallback(() => {
+    if (session?.sessionId) trackSurveyRetake(session.sessionId, archetype?.id);
     setArchetype(null);
     setPromoCode(null);
     setAiSummary(null);
     setCertificateUrl(null);
     resetSession();
-  }, [resetSession]);
+  }, [resetSession, session?.sessionId, archetype?.id]);
+
+  // ── Drop-off tracking ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (phase !== "survey" || !session?.sessionId) return;
+    const onBeforeUnload = () => {
+      const q = surveyQuestions[session.currentStep];
+      if (q) trackDropOff(session.sessionId, session.currentStep, q.id);
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [phase, session?.sessionId, session?.currentStep]);
+
+  // ── Results viewed tracking ───────────────────────────────────────────
+  useEffect(() => {
+    if (phase === "results" && archetype && session?.sessionId) {
+      trackResultsViewed(session.sessionId, archetype.id);
+    }
+  }, [phase, archetype, session?.sessionId]);
 
   // ── Loading state ────────────────────────────────────────────────────
   if (loading) {
@@ -224,6 +255,7 @@ const Index = () => {
                   initialAnswers={session?.answers as SurveyAnswers}
                   initialStep={session?.currentStep}
                   onSaveProgress={handleSaveProgress}
+                  sessionId={session?.sessionId}
                 />
               </motion.div>
             )}
@@ -245,6 +277,7 @@ const Index = () => {
                   certificateUrl={certificateUrl}
                   aiLoading={aiLoading}
                   userName={session?.name}
+                  previousArchetype={session?.previousArchetype}
                 />
               </motion.div>
             )}

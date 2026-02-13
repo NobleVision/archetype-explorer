@@ -35,6 +35,8 @@ export interface SessionData {
     archetypeResult?: string;
     aiSummary?: AISummary;
     certificateUrl?: string;
+    previousArchetype?: string;
+    isRetake?: boolean;
 }
 
 export function useSession() {
@@ -100,6 +102,8 @@ export function useSession() {
 
                 // No existing session — create new
                 const referrerId = new URLSearchParams(window.location.search).get("ref");
+                const previousArchetype = localStorage.getItem("nf_previous_archetype") || undefined;
+
                 try {
                     const res = await fetch(`${API_BASE}/session`, {
                         method: "POST",
@@ -111,11 +115,15 @@ export function useSession() {
                         const data = await res.json();
                         const newId = data.session_id;
                         localStorage.setItem(SESSION_KEY, newId);
+                        // Clear the stored previous archetype after reading
+                        if (previousArchetype) localStorage.removeItem("nf_previous_archetype");
                         setSession({
                             sessionId: newId,
                             currentStep: 0,
                             answers: {},
                             isCompleted: false,
+                            previousArchetype,
+                            isRetake: !!previousArchetype,
                         });
                         setLoading(false);
                         return;
@@ -210,7 +218,7 @@ export function useSession() {
                         sessionId: session.sessionId,
                         archetypeResult,
                         archetypeData,
-                        isRetake: false,
+                        isRetake: session.isRetake ?? false,
                     }),
                 });
 
@@ -239,10 +247,19 @@ export function useSession() {
 
     // ── Reset for retake ─────────────────────────────────────────────────
     const resetSession = useCallback(() => {
+        // Preserve the current archetype for retake comparison
+        const previousArchetype = session?.archetypeResult;
+
         localStorage.removeItem(SESSION_KEY);
         localStorage.removeItem(ANSWERS_KEY);
         localStorage.removeItem(STEP_KEY);
         localStorage.removeItem(USER_INFO_KEY);
+
+        // Store previous archetype for comparison on next completion
+        if (previousArchetype) {
+            localStorage.setItem("nf_previous_archetype", previousArchetype);
+        }
+
         initRef.current = false;
         setSession(null);
         setLoading(true);
@@ -252,7 +269,7 @@ export function useSession() {
             initRef.current = false;
             window.location.reload();
         }, 100);
-    }, []);
+    }, [session?.archetypeResult]);
 
     // ── Generate AI results (async, post-completion) ─────────────────
     const generateResults = useCallback(
