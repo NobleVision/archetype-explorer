@@ -224,49 +224,32 @@ const SurveyForm = ({
           )}
 
           {question.type === "dropdown" ? (
-            <Popover open={open} onOpenChange={setOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={open}
-                  className={cn(
-                    "w-full justify-between bg-card border-border focus:border-accent focus:ring-accent hover:bg-card text-left font-normal py-6 px-4 text-base",
-                    !currentAnswer && "text-muted-foreground"
-                  )}
-                >
-                  {currentAnswer
-                    ? question.options.find((option) => option.value === currentAnswer)?.label
-                    : "Select an option..."}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                <Command>
-                  <CommandInput placeholder="Search..." />
-                  <CommandList>
-                    <CommandEmpty>No option found.</CommandEmpty>
-                    <CommandGroup>
-                      {question.options.map((option) => (
-                        <CommandItem
-                          key={option.value}
-                          value={option.label}
-                          onSelect={() => handleSelect(option.value)}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              currentAnswer === option.value ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          {option.label}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <div className="w-full bg-card border border-border rounded-lg overflow-hidden">
+              <Command className="w-full">
+                <CommandInput placeholder="Search..." className="border-none focus:ring-0" />
+                <CommandList className="max-h-[300px] overflow-y-auto">
+                  <CommandEmpty>No option found.</CommandEmpty>
+                  <CommandGroup>
+                    {question.options.map((option) => (
+                      <CommandItem
+                        key={option.value}
+                        value={option.label}
+                        onSelect={() => handleSelect(option.value)}
+                        className="cursor-pointer py-3"
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            currentAnswer === option.value ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {option.label}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </div>
           ) : (
             <div className="space-y-3">
               {question.options.map((option) => {

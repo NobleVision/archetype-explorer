@@ -36,6 +36,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // 1. Generate unique promo code
         const promoCode = generatePromoCode();
 
+        // Calculate expiration (15 days)
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 15);
+
         // 2. Mark session complete
         const session = await completeSession(
             sessionId,
@@ -55,6 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             isRetake: isRetake ?? false,
             referrerId: (session as any).referrer_id ?? undefined,
             pointsValue: isRetake ? 100 : 1000,
+            expiresAt,
         });
 
         // 4. Fire webhook (async, non-blocking)

@@ -157,12 +157,13 @@ export async function createPromoCode(data: {
     isRetake?: boolean;
     referrerId?: string;
     pointsValue?: number;
+    expiresAt?: Date;
 }) {
     const sql = getDb();
     const points = data.isRetake ? 100 : (data.pointsValue ?? 1000);
     const rows = await sql`
-    INSERT INTO promo_codes (code, session_id, points_value, is_retake, referrer_id)
-    VALUES (${data.code}, ${data.sessionId}, ${points}, ${data.isRetake ?? false}, ${data.referrerId ?? null})
+    INSERT INTO promo_codes (code, session_id, points_value, is_retake, referrer_id, expires_at)
+    VALUES (${data.code}, ${data.sessionId}, ${points}, ${data.isRetake ?? false}, ${data.referrerId ?? null}, ${data.expiresAt ?? null})
     RETURNING *
   `;
     return rows[0];

@@ -52,6 +52,17 @@ export function useSession() {
 
         const init = async () => {
             try {
+                // Check for reset flag in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get("reset") === "true") {
+                    localStorage.removeItem(SESSION_KEY);
+                    localStorage.removeItem(ANSWERS_KEY);
+                    localStorage.removeItem(STEP_KEY);
+                    localStorage.removeItem(USER_INFO_KEY);
+                    // Clean up URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+
                 const existingId = localStorage.getItem(SESSION_KEY);
 
                 if (existingId) {
