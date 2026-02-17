@@ -3,6 +3,8 @@ import { motion } from "framer-motion";
 import { Lightbulb, RotateCcw, Share2, Copy, Check, Users, RefreshCw } from "lucide-react";
 import type { Archetype } from "@/data/archetypes";
 import type { AISummary } from "@/hooks/useSession";
+import type { SurveyAnswers } from "@/data/surveyQuestions";
+import { getPersonalizedCta } from "@/data/personalizedCta";
 import { Button } from "@/components/ui/button";
 import PromoCodeDisplay from "./PromoCodeDisplay";
 import AISummaryCard from "./AISummaryCard";
@@ -20,6 +22,7 @@ interface ResultsViewProps {
   aiLoading?: boolean;
   userName?: string;
   previousArchetype?: string;
+  answers?: SurveyAnswers;
 }
 
 const ResultsView = ({
@@ -32,6 +35,7 @@ const ResultsView = ({
   aiLoading = false,
   userName,
   previousArchetype,
+  answers,
 }: ResultsViewProps) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [referralCopied, setReferralCopied] = useState(false);
@@ -206,7 +210,7 @@ const ResultsView = ({
         className="bg-accent/5 rounded-2xl p-6 sm:p-8 border border-accent/20 mb-10"
       >
         <p className="text-base text-foreground leading-relaxed font-medium">
-          {archetype.cta}
+          {answers ? getPersonalizedCta(archetype.id, answers) : archetype.cta}
         </p>
       </motion.div>
 
