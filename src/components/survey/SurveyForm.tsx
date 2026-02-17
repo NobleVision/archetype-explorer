@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ArrowLeft, AlertCircle } from "lucide-react";
+import { ArrowRight, ArrowLeft, AlertCircle, Check, ChevronsUpDown } from "lucide-react";
 import { surveyQuestions, type SurveyAnswers } from "@/data/surveyQuestions";
 import { trackStepViewed, trackStepAnswered, trackStepBack } from "@/lib/analytics";
 import ProgressBar from "./ProgressBar";
@@ -8,13 +8,20 @@ import OptionCard from "./OptionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Please enter a valid email address");
@@ -40,6 +47,7 @@ const SurveyForm = ({
   const [otherText, setOtherText] = useState("");
   const [direction, setDirection] = useState(1);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   // Restore email/otherText from answers on mount or step change
   useEffect(() => {
@@ -54,6 +62,8 @@ const SurveyForm = ({
     if (sessionId && question) {
       trackStepViewed(sessionId, currentStep, question.id);
     }
+    // Reset popover state when step changes
+    setOpen(false);
   }, [currentStep, sessionId]);
 
   const question = surveyQuestions[currentStep];
@@ -102,6 +112,7 @@ const SurveyForm = ({
     } else {
       setAnswers({ ...answers, [question.id]: value });
       if (value !== "other") setOtherText("");
+      if (question.type === "dropdown") setOpen(false);
     }
   };
 
@@ -213,21 +224,49 @@ const SurveyForm = ({
           )}
 
           {question.type === "dropdown" ? (
-            <Select
-              value={(currentAnswer as string) || ""}
-              onValueChange={(value) => handleSelect(value)}
-            >
-              <SelectTrigger className="w-full bg-card border-border focus:border-accent focus:ring-accent">
-                <SelectValue placeholder="Select an option" />
-              </SelectTrigger>
-              <SelectContent className="bg-card border-border z-50 max-h-60">
-                {question.options.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={open}
+                  className={cn(
+                    "w-full justify-between bg-card border-border focus:border-accent focus:ring-accent hover:bg-card text-left font-normal py-6 px-4 text-base",
+                    !currentAnswer && "text-muted-foreground"
+                  )}
+                >
+                  {currentAnswer
+                    ? question.options.find((option) => option.value === currentAnswer)?.label
+                    : "Select an option..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search..." />
+                  <CommandList>
+                    <CommandEmpty>No option found.</CommandEmpty>
+                    <CommandGroup>
+                      {question.options.map((option) => (
+                        <CommandItem
+                          key={option.value}
+                          value={option.label}
+                          onSelect={() => handleSelect(option.value)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              currentAnswer === option.value ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {option.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           ) : (
             <div className="space-y-3">
               {question.options.map((option) => {

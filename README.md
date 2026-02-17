@@ -40,6 +40,17 @@ The core value proposition is clarity: rather than leaving aspiring entrepreneur
 
 ```
 archetype-explorer/
+├── api/                               # Vercel serverless functions
+│   ├── analytics.ts                   # Survey funnel event ingestion endpoint
+│   ├── complete.ts                    # Survey completion handler (promo code + webhook)
+│   ├── generate-results.ts            # AI summary + certificate generation
+│   ├── migrate.ts                     # Database migration utility
+│   ├── session.ts                     # Session CRUD (create, retrieve, update)
+│   └── lib/
+│       ├── ai.ts                      # OpenAI integration for personalized summaries
+│       ├── certificate.ts             # Cloudinary certificate image generation
+│       ├── db.ts                      # Neon PostgreSQL connection helper
+│       └── promo.ts                   # Promo code generation utility
 ├── public/
 │   ├── images/
 │   │   └── logo.jpeg                  # NuFounders logo displayed on welcome screen
@@ -49,39 +60,41 @@ archetype-explorer/
 ├── src/
 │   ├── components/
 │   │   ├── survey/
-│   │   │   ├── WelcomeScreen.tsx      # Landing/hero screen with branding and "Start" CTA
-│   │   │   ├── SurveyForm.tsx         # Multi-step survey engine (navigation, state, rendering)
-│   │   │   ├── OptionCard.tsx         # Reusable selectable option button component
-│   │   │   ├── ProgressBar.tsx        # Animated progress indicator (question X of Y)
-│   │   │   └── ResultsView.tsx        # Archetype results display with personalized content
-│   │   ├── ui/                        # shadcn/ui component library (~50 components)
-│   │   │   ├── button.tsx
-│   │   │   ├── card.tsx
-│   │   │   ├── input.tsx
-│   │   │   ├── select.tsx
-│   │   │   ├── toast.tsx
-│   │   │   └── ... (and many more)
-│   │   └── NavLink.tsx                # React Router NavLink wrapper with active class support
+│   │   │   ├── AISummaryCard.tsx       # Displays AI-generated executive summary
+│   │   │   ├── CertificateCard.tsx     # Displays and downloads branded certificate
+│   │   │   ├── Confetti.tsx            # Canvas-based confetti celebration animation
+│   │   │   ├── OptionCard.tsx          # Reusable selectable option button component
+│   │   │   ├── ProgressBar.tsx         # Animated progress indicator (question X of Y)
+│   │   │   ├── PromoCodeDisplay.tsx    # Promo code display with clipboard copy
+│   │   │   ├── ResultsView.tsx         # Archetype results + retake comparison banner
+│   │   │   ├── SurveyForm.tsx          # Multi-step survey engine with analytics tracking
+│   │   │   ├── UserInfoScreen.tsx      # Pre-survey name/email capture screen
+│   │   │   └── WelcomeScreen.tsx       # Landing/hero screen with branding and "Start" CTA
+│   │   ├── ui/                         # shadcn/ui component library (~50 components)
+│   │   └── NavLink.tsx                 # React Router NavLink wrapper (unused)
 │   ├── data/
-│   │   ├── archetypes.ts             # Archetype definitions + classification algorithm
-│   │   └── surveyQuestions.ts        # All survey questions, options, and type definitions
+│   │   ├── archetypes.ts              # Archetype definitions + classification algorithm
+│   │   └── surveyQuestions.ts         # All survey questions, options, and type definitions
 │   ├── hooks/
-│   │   ├── use-mobile.tsx            # Responsive breakpoint detection hook
-│   │   └── use-toast.ts             # Toast notification state management hook
+│   │   ├── useSession.ts              # Session management with retake tracking
+│   │   ├── use-mobile.tsx             # Responsive breakpoint detection hook
+│   │   └── use-toast.ts              # Toast notification state management hook
 │   ├── lib/
-│   │   └── utils.ts                  # Utility: cn() for merging Tailwind classes
+│   │   ├── analytics.ts              # Client-side funnel event tracker with batching
+│   │   └── utils.ts                   # Utility: cn() for merging Tailwind classes
 │   ├── pages/
-│   │   ├── Index.tsx                 # Main page: orchestrates Welcome → Survey → Results flow
-│   │   └── NotFound.tsx              # 404 catch-all page
+│   │   ├── Index.tsx                  # Main page: orchestrates Welcome → Survey → Results flow
+│   │   └── NotFound.tsx               # 404 catch-all page
 │   ├── test/
-│   │   ├── setup.ts                  # Vitest setup (jest-dom matchers, matchMedia mock)
-│   │   └── example.test.ts           # Placeholder test
-│   ├── App.tsx                       # Root component: providers, router, toasters
-│   ├── App.css                       # Legacy/unused Vite starter CSS
-│   ├── index.css                     # Global styles: Tailwind directives, CSS variables, fonts
-│   ├── main.tsx                      # Application entry point
-│   └── vite-env.d.ts                # Vite type declarations
-├── index.html                        # HTML shell
+│   │   ├── setup.ts                   # Vitest setup (jest-dom matchers, matchMedia mock)
+│   │   └── example.test.ts            # Placeholder test
+│   ├── App.tsx                        # Root component: providers, router, toasters
+│   ├── App.css                        # Legacy/unused Vite starter CSS
+│   ├── index.css                      # Global styles: Tailwind directives, CSS variables, fonts
+│   ├── main.tsx                       # Application entry point
+│   └── vite-env.d.ts                 # Vite type declarations
+├── index.html                         # HTML shell with NuFounders branding + OG tags
+├── vercel.json                        # Vercel config with API rewrites + SPA fallback
 ├── package.json
 ├── tailwind.config.ts
 ├── vite.config.ts
@@ -89,12 +102,79 @@ archetype-explorer/
 ├── tsconfig.json / tsconfig.app.json / tsconfig.node.json
 ├── eslint.config.js
 ├── postcss.config.js
-└── components.json                   # shadcn/ui configuration
+└── components.json                    # shadcn/ui configuration
 ```
 
 ---
 
-## 4. Application Flow (Step-by-Step)
+## 4. Completed Features (All 7 Integration Phases)
+
+### Phase 1 — Survey Backend API & Session Persistence ✅
+
+- **Vercel serverless functions** (`api/session.ts`, `api/complete.ts`) with Neon PostgreSQL
+- **Session CRUD**: `GET` (retrieve), `POST` (create with `nanoid`), `PUT` (save answers/step), `PATCH` (save user info)
+- **Dual persistence**: `useSession` hook maintains both `localStorage` and server-side session state
+- **Resume functionality**: Survey resumes at the correct step with previous answers restored on page refresh
+- **Auto-save**: Answers saved to backend on each step navigation
+- **Zod email validation** on the early-access question with inline error messages
+
+### Phase 2 — Pre-Survey Name/Email & Branding ✅
+
+- **`UserInfoScreen.tsx`**: Name (required) + email (optional with Zod validation) capture between Welcome and Survey
+- **NuFounders branding**: `index.html` title, description, OG tags, Twitter cards, and favicon all updated
+- **Logo display**: NuFounders logo on welcome screen from `/images/logo.jpeg`
+
+### Phase 3 — Promo Code & Completion UX ✅
+
+- **`PromoCodeDisplay.tsx`**: Large code display, clipboard copy with toast confirmation, "Don't lose this code!" callout
+- **`Confetti.tsx`**: Canvas-based confetti celebration on survey completion
+- **Referral system**: Shareable referral link (`?ref=<sessionId>`) with copy-to-clipboard
+- **Completion webhook**: Fires async webhook to NuFounders main app on survey completion
+
+### Phase 4 — AI-Powered Results & Certificate ✅
+
+- **`api/generate-results.ts`**: OpenAI-powered executive summary generation based on archetype + answers
+- **`api/lib/certificate.ts`**: Branded certificate image via Cloudinary text overlay
+- **`AISummaryCard.tsx`**: Displays personalized AI summary with loading states
+- **`CertificateCard.tsx`**: Certificate preview with download button
+- **Data persistence**: Certificate URL and AI summary stored in `survey_sessions` table
+
+### Phase 5 — Points System Dashboard (NuFounders Main App) ✅
+
+- **`PromoRedemption.tsx`**: Promo code redemption UI on Dashboard page
+- **`PointsBalance.tsx`**: Animated points counter with SVG level ring
+- **`TransactionHistory.tsx`**: Points transaction history display
+- Wired into Dashboard page with responsive grid layout
+
+### Phase 6 — Admin Dashboard Enhancements (NuFounders Main App) ✅
+
+- **`SurveyAdmin.tsx`**: Paginated, filterable survey sessions table
+- **Archetype distribution**: Recharts horizontal bar chart
+- **Promo code metrics**: 4 KPI cards with aggregate redemption stats
+- **Webhook notification feed**: Auto-refreshes every 30 seconds
+- **Investor Traction Dashboard**: Moved from user Dashboard to Admin Dashboard
+- **Survey Analytics**: Added to admin sidebar + quick actions grid
+
+### Phase 7 — Analytics & Polish ✅
+
+- **Client-side analytics** (`src/lib/analytics.ts`):
+  - Event batching with 3-second debounce
+  - `navigator.sendBeacon` with `fetch` fallback
+  - Auto-flush on `beforeunload` and `visibilitychange`
+  - Tracked events: `survey_start`, `step_viewed`, `step_answered`, `step_back`, `survey_completed`, `survey_retake`, `results_viewed`, `drop_off`
+- **Backend analytics endpoint** (`api/analytics.ts`):
+  - `POST /api/analytics` receives batched events
+  - Auto-creates `survey_events` table with `session_id` index
+  - Handles both JSON fetch and sendBeacon blob payloads
+- **Retake tracking**:
+  - `useSession` stores `previousArchetype` in `localStorage` on reset
+  - New session reads retake flag and passes `isRetake` to completion API
+  - `ResultsView` retake comparison banner shows archetype evolution
+- **Session management**: `previousArchetype` and `isRetake` fields in `SessionData`
+
+---
+
+## 5. Application Flow (Step-by-Step)
 
 ### Walkthrough
 
@@ -108,26 +188,32 @@ archetype-explorer/
    - Estimated time (5–10 minutes) and confidentiality indicators
    - A **"Start the Survey"** button
 
-3. **Survey Phase** — When the user clicks "Start the Survey," `handleStart()` sets `phase` to `"survey"`. Framer Motion's `AnimatePresence` cross-fades from the welcome screen to the `SurveyForm` component. The survey presents 16 questions one at a time (with conditional skip logic — see Section 5).
+3. **User Info Phase** — When the user clicks "Start the Survey," `handleStart()` fires `trackSurveyStart()` and sets `phase` to `"user-info"`. The `UserInfoScreen` captures name (required) and email (optional with Zod validation).
 
-4. **Answering Questions** — For each question, the user selects an option via `OptionCard` buttons (single/multi-select), a dropdown (`Select` component for the state question), or a conditional email input. The `ProgressBar` shows "Question X of Y" with an animated fill bar.
+4. **Survey Phase** — After user info, `phase` transitions to `"survey"`. Framer Motion's `AnimatePresence` cross-fades to the `SurveyForm` component. The survey presents 16 questions one at a time (with conditional skip logic). Each step fires `trackStepViewed()`, and each answer fires `trackStepAnswered()`.
 
-5. **Navigation** — The user clicks **"Continue"** to advance or **"Back"** to return. Skip logic may jump from Question 2 directly to Question 6 if the user selects "Not pursuing entrepreneurship."
+5. **Answering Questions** — For each question, the user selects an option via `OptionCard` buttons (single/multi-select), a dropdown (`Select` component for the state question), or a conditional email input. The `ProgressBar` shows "Question X of Y" with an animated fill bar. Answers auto-save to the backend.
 
-6. **Survey Completion** — On the final question, the "Continue" button reads **"See My Results."** Clicking it calls `handleComplete(answers)`, which passes all collected answers to `classifyArchetype()`.
+6. **Navigation** — The user clicks **"Continue"** to advance or **"Back"** to return. Back navigation fires `trackStepBack()`. Skip logic may jump from Question 2 directly to Question 6 if the user selects "Not pursuing entrepreneurship."
 
-7. **Classification** — The `classifyArchetype()` function in `src/data/archetypes.ts` evaluates the user's answers to questions 1–4 (employment status, business interest, income urgency, motivation) through a priority-ordered rule set and returns one of six `Archetype` objects.
+7. **Survey Completion** — On the final question, the "Continue" button reads **"See My Results."** Clicking it calls `handleComplete(answers)`, which passes all answers to `classifyArchetype()`. The completion fires `trackSurveyCompleted()`, generates a promo code via `api/complete.ts`, and triggers a webhook to the NuFounders main app.
 
-8. **Results Phase** — `Index.tsx` sets `phase` to `"results"` and stores the archetype. The `ResultsView` component renders with staggered animations:
-   - The archetype emoji and name (e.g., 🔭 "The Curious Explorer")
-   - A personalized headline
-   - Body paragraphs explaining the user's situation
-   - Bullet points identifying key challenges
-   - A "NuFounders Solution" card with platform-specific guidance
-   - A call-to-action message
-   - A **"Retake Survey"** button that resets to the welcome phase
+8. **Classification** — The `classifyArchetype()` function evaluates answers to Q1–Q4 through a priority-ordered rule set and returns one of six `Archetype` objects.
 
-9. **Retake** — Clicking "Retake Survey" calls `handleRetake()`, which clears the archetype, resets to `phase = "welcome"`, and scrolls to the top.
+9. **Results Phase** — `Index.tsx` sets `phase` to `"results"` and fires `trackResultsViewed()`. The `ResultsView` component renders with staggered animations:
+   - Retake comparison banner (if applicable — shows "Your archetype evolved!" or "Your archetype hasn't changed!")
+   - The archetype emoji and name
+   - A personalized headline and body paragraphs
+   - Key challenges and NuFounders Solution card
+   - Promo code display with clipboard copy
+   - AI-generated executive summary (loading state while generating)
+   - Certificate preview with download
+   - Referral link section with copy-to-clipboard
+   - **"Retake Survey"** button
+
+10. **Retake** — Clicking "Retake Survey" calls `handleRetake()`, which fires `trackSurveyRetake()`, stores the current archetype as `previousArchetype`, resets the session, and reloads. The new session is flagged as `isRetake`.
+
+11. **Drop-off Tracking** — If the user closes or navigates away during the active survey phase, a `drop_off` event is fired via `beforeunload`.
 
 ### Application Navigation Flow
 
@@ -135,12 +221,13 @@ archetype-explorer/
 flowchart TD
     A["🌐 Page Load<br/>(index.html → main.tsx → App.tsx)"] --> B["📄 Index.tsx<br/>phase = 'welcome'"]
     B --> C["🏠 WelcomeScreen<br/>Logo, headline, description,<br/>'Start the Survey' button"]
-    C -->|"User clicks 'Start the Survey'"| D["📝 SurveyForm<br/>phase = 'survey'"]
+    C -->|"User clicks 'Start the Survey'"| UI["👤 UserInfoScreen<br/>phase = 'user-info'"]
+    UI -->|"Name/email submitted"| D["📝 SurveyForm<br/>phase = 'survey'"]
     D --> E["❓ Question Display<br/>ProgressBar + OptionCard/Select"]
     E -->|"User selects answer<br/>& clicks 'Continue'"| F{"Last question?"}
     F -->|No| G["➡️ Next Question<br/>(with skip logic)"]
     G --> E
-    F -->|Yes| H["⚙️ classifyArchetype()<br/>Evaluate answers"]
+    F -->|Yes| H["⚙️ classifyArchetype()<br/>+ API completion"]
     H --> I["🏆 ResultsView<br/>phase = 'results'"]
     I -->|"User clicks 'Retake Survey'"| B
     E -->|"User clicks 'Back'"| J["⬅️ Previous Question<br/>(with skip logic)"]
@@ -148,6 +235,7 @@ flowchart TD
 
     style A fill:#f0f4ff,stroke:#4a6fa5
     style C fill:#fff8e1,stroke:#f5a623
+    style UI fill:#e8eaf6,stroke:#5c6bc0
     style D fill:#e8f5e9,stroke:#4caf50
     style H fill:#fce4ec,stroke:#e91e63
     style I fill:#f3e5f5,stroke:#9c27b0
@@ -159,45 +247,53 @@ flowchart TD
 sequenceDiagram
     participant User
     participant WelcomeScreen
+    participant UserInfo as UserInfoScreen
     participant Index as Index.tsx
     participant SurveyForm
-    participant SurveyQuestions as surveyQuestions.ts
-    participant Archetypes as archetypes.ts
-    participant ResultsView
+    participant Analytics as analytics.ts
+    participant API as Vercel API
+    participant DB as Neon PostgreSQL
 
     User->>WelcomeScreen: Views landing page
     User->>WelcomeScreen: Clicks "Start the Survey"
     WelcomeScreen->>Index: onStart()
+    Index->>Analytics: trackSurveyStart(sessionId)
+    Index->>Index: setPhase("user-info")
+    Index->>UserInfo: Renders UserInfoScreen
+    User->>UserInfo: Enters name/email
+    UserInfo->>API: PATCH /api/session (save user info)
+    API->>DB: Update session record
+    UserInfo->>Index: onSubmit()
     Index->>Index: setPhase("survey")
     Index->>SurveyForm: Renders SurveyForm
 
     loop For each question (1–16)
-        SurveyForm->>SurveyQuestions: Read surveyQuestions[currentStep]
+        SurveyForm->>Analytics: trackStepViewed(sessionId, step)
         SurveyForm->>User: Display question + options
         User->>SurveyForm: Selects answer
-        SurveyForm->>SurveyForm: setAnswers({...answers, [id]: value})
+        SurveyForm->>Analytics: trackStepAnswered(sessionId, step, value)
+        SurveyForm->>API: PUT /api/session (auto-save)
         User->>SurveyForm: Clicks "Continue"
-        SurveyForm->>SurveyForm: getNextStep() (apply skip logic)
     end
 
     User->>SurveyForm: Clicks "See My Results" (last question)
     SurveyForm->>Index: onComplete(answers)
-    Index->>Archetypes: classifyArchetype(answers)
-    Archetypes-->>Index: Returns Archetype object
-    Index->>Index: setArchetype(result), setPhase("results")
-    Index->>ResultsView: Renders ResultsView with archetype
-    ResultsView->>User: Displays personalized results
+    Index->>Index: classifyArchetype(answers)
+    Index->>API: POST /api/complete (promo code + webhook)
+    API->>DB: Update session with archetype + promo code
+    Index->>Analytics: trackSurveyCompleted(sessionId, archetype)
+    Index->>Index: setPhase("results")
+    Index->>API: POST /api/generate-results (AI summary + certificate)
+    Index->>User: Displays ResultsView with retake comparison
 
-    User->>ResultsView: Clicks "Retake Survey"
-    ResultsView->>Index: onRetake()
-    Index->>Index: setArchetype(null), setPhase("welcome")
-    Index->>WelcomeScreen: Renders WelcomeScreen
+    User->>Index: Clicks "Retake Survey"
+    Index->>Analytics: trackSurveyRetake(sessionId, previousArchetype)
+    Index->>Index: Store previousArchetype, reset session
 ```
 
 ---
 
-
-## 5. Survey Logic (Step-by-Step)
+## 6. Survey Logic (Step-by-Step)
 
 ### Questions and Data Collection
 
@@ -229,6 +325,7 @@ The survey consists of **16 questions** defined in `src/data/surveyQuestions.ts`
 - **Email-conditional questions** (Q9): If the user selects a positive interest option (`yes_apply`, `yes_learn_more`, `maybe`, `maybe_later`), an email input appears. The email is stored as `answers[questionId + "_email"]`.
 - **"Other" text** (Q1): If the user selects "Other" for employment status, a textarea appears. The text is stored as `answers[questionId + "_other"]`.
 - **Skip logic**: If Q2 answer is `not_pursuing` (not pursuing entrepreneurship), the survey skips Q3–Q5 and jumps directly to Q6 (`income_goal`). The back button respects this skip.
+- **Auto-save**: On each step navigation, answers and current step are saved to the backend via `PUT /api/session`.
 
 ### Archetype Classification Algorithm
 
@@ -321,7 +418,8 @@ flowchart TD
 ```mermaid
 stateDiagram-v2
     [*] --> Welcome
-    Welcome --> Survey : User clicks "Start the Survey"
+    Welcome --> UserInfo : User clicks "Start the Survey"
+    UserInfo --> Survey : Name/email submitted
 
     state Survey {
         [*] --> Q1_Employment
@@ -343,13 +441,40 @@ stateDiagram-v2
         Q15_Income --> [*] : "See My Results"
     }
 
-    Survey --> Results : classifyArchetype(answers)
-    Results --> Welcome : User clicks "Retake Survey"
+    Survey --> Results : classifyArchetype(answers) + API completion
+    Results --> Welcome : User clicks "Retake Survey" (stores previousArchetype)
 ```
 
 ---
 
-## 6. Archetypes Reference
+## 7. Analytics Event Tracking
+
+The survey app tracks comprehensive funnel analytics via `src/lib/analytics.ts` and `api/analytics.ts`.
+
+### Event Types
+
+| Event              | Trigger                          | Data Captured                              |
+| ------------------ | -------------------------------- | ------------------------------------------ |
+| `survey_start`     | User clicks "Start the Survey"   | `sessionId`                                |
+| `step_viewed`      | Each question step renders       | `sessionId`, `step`, `questionId`          |
+| `step_answered`    | User selects/changes an answer   | `sessionId`, `step`, `questionId`, `value` |
+| `step_back`        | User navigates backward          | `sessionId`, `step`, `questionId`          |
+| `survey_completed` | Archetype assigned               | `sessionId`, archetype ID                  |
+| `results_viewed`   | Results page renders             | `sessionId`                                |
+| `survey_retake`    | User clicks "Retake Survey"      | `sessionId`, `previousArchetype`           |
+| `drop_off`         | User leaves during active survey | `sessionId`, `step`, `questionId`          |
+
+### Technical Implementation
+
+- **Batching**: Events are queued and flushed every 3 seconds via debounce
+- **Transport**: `navigator.sendBeacon` (preferred, non-blocking) with `fetch` fallback
+- **Auto-flush**: Events flush on `beforeunload` and `visibilitychange` events
+- **Non-blocking**: Analytics never blocks the UI thread or surfaces errors to users
+- **Backend storage**: `survey_events` table with `session_id` index, auto-created if absent
+
+---
+
+## 8. Archetypes Reference
 
 ### 🔭 The Curious Explorer (`curious_explorer`)
 
@@ -425,7 +550,58 @@ stateDiagram-v2
 
 ---
 
-## 7. Getting Started
+## 9. Backend API Reference
+
+### Survey Session (`api/session.ts`)
+
+| Method  | Endpoint                      | Purpose                                                              |
+| ------- | ----------------------------- | -------------------------------------------------------------------- |
+| `GET`   | `/api/session?id=<sessionId>` | Retrieve session state (answers, step, user info, completion status) |
+| `POST`  | `/api/session`                | Create new session with nanoid, optional `referrerId`                |
+| `PUT`   | `/api/session`                | Save/update answers and current step                                 |
+| `PATCH` | `/api/session`                | Save user info (name, email)                                         |
+
+### Survey Completion (`api/complete.ts`)
+
+| Method | Endpoint        | Purpose                                                               |
+| ------ | --------------- | --------------------------------------------------------------------- |
+| `POST` | `/api/complete` | Complete survey: saves archetype, generates promo code, fires webhook |
+
+**Request body**: `{ sessionId, archetypeResult, archetypeData, isRetake }`
+**Response**: `{ success, promoCode, session }`
+
+### AI Results Generation (`api/generate-results.ts`)
+
+| Method | Endpoint                | Purpose                                                 |
+| ------ | ----------------------- | ------------------------------------------------------- |
+| `POST` | `/api/generate-results` | Generate AI summary (OpenAI) + certificate (Cloudinary) |
+
+**Request body**: `{ sessionId }`
+**Response**: `{ aiSummary, certificateUrl }`
+
+### Analytics (`api/analytics.ts`)
+
+| Method | Endpoint         | Purpose                                                    |
+| ------ | ---------------- | ---------------------------------------------------------- |
+| `POST` | `/api/analytics` | Receive batched analytics events (JSON or sendBeacon blob) |
+
+**Request body**: `{ events: [{ event, sessionId, step?, questionId?, value?, meta?, timestamp }] }`
+
+---
+
+## 10. Environment Variables
+
+| Variable         | Description                                                         | Required                  |
+| ---------------- | ------------------------------------------------------------------- | ------------------------- |
+| `DATABASE_URL`   | Neon PostgreSQL connection string (shared with NuFounders main app) | ✅                         |
+| `OPENAI_API_KEY` | OpenAI API key for AI summary generation                            | For Phase 4               |
+| `CLOUDINARY_URL` | Cloudinary environment variable for certificate generation          | For Phase 4               |
+| `WEBHOOK_URL`    | NuFounders main app webhook endpoint                                | For webhook notifications |
+| `WEBHOOK_SECRET` | Shared secret for webhook verification                              | For webhook notifications |
+
+---
+
+## 11. Getting Started
 
 ### Prerequisites
 
@@ -481,6 +657,16 @@ npm run test:watch
 npm run lint
 ```
 
-### Environment Configuration
+### Deployment
 
-No environment variables are required for local development. The Vite dev server runs on port **8080** with HMR overlay disabled (configured in `vite.config.ts`). The `@` path alias resolves to `./src/` for clean imports.
+The app deploys to Vercel with serverless API routes:
+
+```sh
+# Deploy to Vercel
+vercel
+
+# Or push to GitHub for auto-deploy
+git push origin main
+```
+
+Ensure all environment variables are set in the Vercel dashboard.

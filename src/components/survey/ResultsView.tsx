@@ -227,7 +227,6 @@ const ResultsView = ({
         userName={userName}
         archetypeName={archetype.name}
         archetypeEmoji={archetype.emoji}
-        headline={archetype.headline}
       />
 
       {/* ── Promo Code Section ────────────────────────────────────────── */}

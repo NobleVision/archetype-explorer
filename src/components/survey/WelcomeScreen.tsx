@@ -15,7 +15,7 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
         transition={{ duration: 0.6 }}
       >
         <motion.img
-          src="/images/logo.jpeg"
+          src="/images/nufounder-logo.jfif"
           alt="NuFounders logo"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}

@@ -101,6 +101,20 @@ const Index = () => {
       const result = classifyArchetype(answers);
       setArchetype(result);
 
+      // Webhook trigger
+      fetch("https://nufounders.com/api/webhooks/survey-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            sessionId: session?.sessionId,
+            name: session?.name,
+            email: session?.email,
+            archetype: result.id,
+            answers: answers,
+            timestamp: new Date().toISOString()
+        })
+      }).catch(err => console.error("Webhook failed", err));
+
       // Complete survey on backend + get promo code
       const code = await completeSurvey(result.id, {
         name: result.name,
@@ -182,7 +196,7 @@ const Index = () => {
             className="flex items-center gap-3"
           >
             <img
-              src="/images/logo.jpeg"
+              src="/images/nufounder-logo.jfif"
               alt="NuFounders logo"
               className="w-8 h-8 rounded-lg object-contain"
             />
