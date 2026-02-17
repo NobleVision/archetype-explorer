@@ -278,6 +278,7 @@ const Index = () => {
                   aiLoading={aiLoading}
                   userName={session?.name}
                   previousArchetype={session?.previousArchetype}
+                  answers={session?.answers as SurveyAnswers}
                 />
               </motion.div>
             )}
