@@ -1,12 +1,25 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Clock, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface WelcomeScreenProps {
   onStart: () => void;
 }
 
 const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
+  const [agreed, setAgreed] = useState(false);
+
   return (
     <div className="w-full max-w-2xl mx-auto text-center">
       <motion.div
@@ -56,22 +69,80 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6 }}
-          className="flex items-center justify-center gap-6 mb-10 text-sm text-muted-foreground"
+          className="flex flex-col items-center gap-6 mb-10"
         >
-          <span className="flex items-center gap-1.5">
-            <Clock className="w-4 h-4 text-accent" />
-            5–10 minutes
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Shield className="w-4 h-4 text-accent" />
-            Confidential
-          </span>
+          <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-accent" />
+              5–10 minutes
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-accent" />
+              Confidential
+            </span>
+          </div>
+
+          {/* EULA / Consent Checkbox */}
+          <div className="flex items-start gap-2 max-w-sm mx-auto text-left bg-muted/30 p-3 rounded-lg border border-border/50">
+            <Checkbox 
+              id="consent" 
+              checked={agreed} 
+              onCheckedChange={(c) => setAgreed(c === true)}
+              className="mt-0.5"
+            />
+            <div className="grid gap-1.5 leading-none">
+              <Label
+                htmlFor="consent"
+                className="text-sm text-muted-foreground font-normal cursor-pointer"
+              >
+                I agree to the{" "}
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <span className="text-accent underline underline-offset-4 cursor-pointer hover:text-accent/80">
+                      User Data Agreement
+                    </span>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Data Collection & Privacy</DialogTitle>
+                      <DialogDescription className="pt-4 text-left space-y-3">
+                        <p>
+                          To provide the best possible placement matching and community experience, NuFounders collects specific data points during your survey session.
+                        </p>
+                        <div>
+                          <strong className="text-foreground">What we collect:</strong>
+                          <ul className="list-disc pl-5 mt-1 space-y-1">
+                            <li>Your IP address (used for approximate city/state location matching).</li>
+                            <li>Survey responses regarding your career goals and background.</li>
+                            <li>Browser type (User Agent) for analytics.</li>
+                          </ul>
+                        </div>
+                        <div>
+                          <strong className="text-foreground">How we use it:</strong>
+                          <ul className="list-disc pl-5 mt-1 space-y-1">
+                            <li>To match you with local peer groups and resources in your area.</li>
+                            <li>To prevent duplicate submissions and ensure platform security.</li>
+                            <li>To generate your personalized Career Archetype profile.</li>
+                          </ul>
+                        </div>
+                        <p className="text-xs text-muted-foreground pt-2 border-t">
+                          By continuing, you consent to this data processing in accordance with our Privacy Policy.
+                        </p>
+                      </DialogDescription>
+                    </DialogHeader>
+                  </DialogContent>
+                </Dialog>
+                . I understand that my location data (city/state) may be used to match me with local opportunities.
+              </Label>
+            </div>
+          </div>
         </motion.div>
 
         <Button
           onClick={onStart}
+          disabled={!agreed}
           size="lg"
-          className="gap-2 bg-gradient-accent text-accent-foreground hover:opacity-90 shadow-glow font-semibold px-8 py-6 text-base rounded-xl"
+          className="gap-2 bg-gradient-accent text-accent-foreground hover:opacity-90 shadow-glow font-semibold px-8 py-6 text-base rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Start the Survey
           <ArrowRight className="w-5 h-5" />

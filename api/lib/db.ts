@@ -13,11 +13,14 @@ export async function createSession(data: {
     ipAddress?: string;
     userAgent?: string;
     referrerId?: string;
+    city?: string;
+    region?: string;
+    country?: string;
 }) {
     const sql = getDb();
     const rows = await sql`
-    INSERT INTO survey_sessions (session_id, ip_address, user_agent, referrer_id, answers, current_step)
-    VALUES (${data.sessionId}, ${data.ipAddress ?? null}, ${data.userAgent ?? null}, ${data.referrerId ?? null}, ${JSON.stringify({})}::jsonb, 0)
+    INSERT INTO survey_sessions (session_id, ip_address, user_agent, referrer_id, city, region, country, answers, current_step)
+    VALUES (${data.sessionId}, ${data.ipAddress ?? null}, ${data.userAgent ?? null}, ${data.referrerId ?? null}, ${data.city ?? null}, ${data.region ?? null}, ${data.country ?? null}, ${JSON.stringify({})}::jsonb, 0)
     RETURNING *
   `;
     return rows[0];

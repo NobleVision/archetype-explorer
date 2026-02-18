@@ -39,11 +39,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 null;
             const userAgent = (req.headers["user-agent"] as string) || null;
 
+            // Perform simple IP geolocation (if real IP available)
+            let geoData: { city?: string, region?: string, country?: string } = {};
+            
+            // Skip localhost/private IPs to avoid API errors
+            if (ipAddress && !ipAddress.match(/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|::1)/)) {
+                try {
+                    // Using ip-api.com (free, no-key, non-commercial use)
+                    // Be mindful of rate limits (45 req/min)
+                    const geoRes = await fetch(`http://ip-api.com/json/${ipAddress}?fields=status,country,regionName,city`);
+                    if (geoRes.ok) {
+                        const data = await geoRes.json();
+                        if (data.status === 'success') {
+                            geoData = {
+                                city: data.city,
+                                region: data.regionName,
+                                country: data.country
+                            };
+                        }
+                    }
+                } catch (e) {
+                    console.error("Geo lookup failed:", e);
+                }
+            }
+
             const session = await createSession({
                 sessionId,
                 ipAddress: ipAddress ?? undefined,
                 userAgent: userAgent ?? undefined,
                 referrerId,
+                ...geoData
             });
 
             return res.status(201).json(session);
