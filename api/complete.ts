@@ -80,6 +80,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     promoCode,
                     name: (session as any).name,
                     email: (session as any).email,
+                    contactId: (session as any).contact_id || null,
+                    outreachId: (session as any).outreach_id || null,
                     completedAt: new Date().toISOString(),
                 }),
             }).catch((err) => {
