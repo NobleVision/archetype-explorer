@@ -111,8 +111,7 @@ export function useSession() {
                     return;
                 }
 
-                // No existing session — create new
-                const urlParams = new URLSearchParams(window.location.search);
+                // No existing session — create new (reuse urlParams from above)
                 const referrerId = urlParams.get("ref");
                 const sourceChannel = urlParams.get("src") || undefined;
                 const contactId = urlParams.get("cid") || undefined;
