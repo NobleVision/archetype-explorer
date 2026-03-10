@@ -112,14 +112,18 @@ export function useSession() {
                 }
 
                 // No existing session — create new
-                const referrerId = new URLSearchParams(window.location.search).get("ref");
+                const urlParams = new URLSearchParams(window.location.search);
+                const referrerId = urlParams.get("ref");
+                const sourceChannel = urlParams.get("src") || undefined;
+                const contactId = urlParams.get("cid") || undefined;
+                const outreachId = urlParams.get("oid") || undefined;
                 const previousArchetype = localStorage.getItem("nf_previous_archetype") || undefined;
 
                 try {
                     const res = await fetch(`${API_BASE}/session`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ referrerId }),
+                        body: JSON.stringify({ referrerId, sourceChannel, contactId, outreachId }),
                     });
 
                     if (res.ok) {
@@ -193,10 +197,10 @@ export function useSession() {
 
     // ── Save user info ───────────────────────────────────────────────────
     const saveUserInfo = useCallback(
-        async (name: string, email?: string) => {
+        async (name: string, email?: string, phoneNumber?: string, smsConsent?: boolean) => {
             if (!session) return;
 
-            localStorage.setItem(USER_INFO_KEY, JSON.stringify({ name, email }));
+            localStorage.setItem(USER_INFO_KEY, JSON.stringify({ name, email, phoneNumber, smsConsent }));
             setSession((prev) => (prev ? { ...prev, name, email } : prev));
 
             try {
@@ -207,6 +211,8 @@ export function useSession() {
                         sessionId: session.sessionId,
                         name,
                         email: email || null,
+                        phoneNumber: phoneNumber || null,
+                        smsConsent: smsConsent ?? false,
                     }),
                 });
             } catch {

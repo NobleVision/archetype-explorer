@@ -82,8 +82,8 @@ const Index = () => {
   }, [session?.sessionId]);
 
   const handleUserInfoSubmit = useCallback(
-    async (name: string, email?: string) => {
-      await saveUserInfo(name, email);
+    async (name: string, email?: string, phoneNumber?: string, smsConsent?: boolean) => {
+      await saveUserInfo(name, email, phoneNumber, smsConsent);
       setPhase("survey");
     },
     [saveUserInfo]

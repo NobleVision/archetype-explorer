@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // ── POST: Create new session ─────────────────────────────────────────
         if (req.method === "POST") {
-            const { referrerId } = req.body ?? {};
+            const { referrerId, sourceChannel, contactId, outreachId } = req.body ?? {};
             const sessionId = nanoid(24);
             const ipAddress =
                 (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
@@ -41,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             // Perform simple IP geolocation (if real IP available)
             let geoData: { city?: string, region?: string, country?: string } = {};
-            
+
             // Skip localhost/private IPs to avoid API errors
             if (ipAddress && !ipAddress.match(/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|::1)/)) {
                 try {
@@ -68,6 +68,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 ipAddress: ipAddress ?? undefined,
                 userAgent: userAgent ?? undefined,
                 referrerId,
+                sourceChannel,
+                contactId,
+                outreachId,
                 ...geoData
             });
 
@@ -85,14 +88,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             return res.status(200).json(session);
         }
 
-        // ── PATCH: Save user info (name/email) ───────────────────────────────
+        // ── PATCH: Save user info (name/email/phone/smsConsent) ────────────
         if (req.method === "PATCH") {
-            const { sessionId, name, email } = req.body ?? {};
+            const { sessionId, name, email, phoneNumber, smsConsent } = req.body ?? {};
             if (!sessionId || !name) {
                 return res.status(400).json({ error: "Missing sessionId or name" });
             }
 
-            const session = await saveUserInfo(sessionId, name, email || null);
+            const session = await saveUserInfo(sessionId, name, email || null, phoneNumber || null, smsConsent ?? false);
             if (!session) return res.status(404).json({ error: "Session not found" });
 
             return res.status(200).json(session);

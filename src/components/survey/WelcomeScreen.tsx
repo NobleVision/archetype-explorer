@@ -126,7 +126,10 @@ const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
                           </ul>
                         </div>
                         <p className="text-xs text-muted-foreground pt-2 border-t">
-                          By continuing, you consent to this data processing in accordance with our Privacy Policy.
+                          By continuing, you consent to this data processing in accordance with our{" "}
+                          <a href="https://www.nufounders.com/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-4 hover:text-accent/80">Privacy Policy</a>
+                          {" "}and{" "}
+                          <a href="https://www.nufounders.com/terms-and-conditions" target="_blank" rel="noopener noreferrer" className="text-accent underline underline-offset-4 hover:text-accent/80">Terms &amp; Conditions</a>.
                         </p>
                       </DialogDescription>
                     </DialogHeader>
