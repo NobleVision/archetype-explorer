@@ -67,6 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const webhookSecret = process.env.WEBHOOK_SECRET;
 
         if (webhookUrl) {
+            console.log(`[webhook] Firing survey-completed to ${webhookUrl}`);
             fetch(webhookUrl, {
                 method: "POST",
                 headers: {
@@ -84,9 +85,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     outreachId: (session as any).outreach_id || null,
                     completedAt: new Date().toISOString(),
                 }),
+            }).then(async (resp) => {
+                console.log(`[webhook] survey-completed response: ${resp.status} ${resp.statusText}`);
+                if (!resp.ok) {
+                    const body = await resp.text().catch(() => "");
+                    console.error(`[webhook] survey-completed error body: ${body}`);
+                }
             }).catch((err) => {
-                console.error("[webhook] Failed to fire:", err.message);
+                console.error("[webhook] Failed to fire survey-completed:", err.message);
             });
+        } else {
+            console.warn("[webhook] NUFOUNDERS_WEBHOOK_URL not configured, skipping survey-completed webhook");
         }
 
         return res.status(200).json({
