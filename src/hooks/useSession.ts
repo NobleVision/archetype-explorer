@@ -37,6 +37,8 @@ export interface SessionData {
     certificateUrl?: string;
     previousArchetype?: string;
     isRetake?: boolean;
+    contactId?: string;
+    outreachId?: string;
 }
 
 export function useSession() {
@@ -85,6 +87,8 @@ export function useSession() {
                                 archetypeResult: data.archetype_result || undefined,
                                 aiSummary: parsedAiSummary,
                                 certificateUrl: data.certificate_url || undefined,
+                                contactId: data.contact_id?.toString() || undefined,
+                                outreachId: data.outreach_id?.toString() || undefined,
                             };
                             setSession(restored);
                             setLoading(false);
@@ -138,6 +142,8 @@ export function useSession() {
                             isCompleted: false,
                             previousArchetype,
                             isRetake: !!previousArchetype,
+                            contactId,
+                            outreachId,
                         });
                         setLoading(false);
                         return;

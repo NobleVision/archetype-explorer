@@ -82,8 +82,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const { sessionId, answers, step } = req.body ?? {};
             if (!sessionId) return res.status(400).json({ error: "Missing sessionId" });
 
+            // Fetch current session to detect step threshold crossing
+            const prevSession = await getSession(sessionId);
+            const prevStep = (prevSession as any)?.current_step ?? 0;
+
             const session = await saveAnswers(sessionId, answers ?? {}, step ?? 0);
             if (!session) return res.status(404).json({ error: "Session not found" });
+
+            // Fire "survey started" webhook when user crosses step 3 threshold
+            const STARTED_THRESHOLD = 3;
+            if (step >= STARTED_THRESHOLD && prevStep < STARTED_THRESHOLD) {
+                const webhookBase = process.env.NUFOUNDERS_WEBHOOK_URL;
+                const webhookSecret = process.env.WEBHOOK_SECRET;
+                // Derive the survey-started URL from the survey-completed URL
+                const startedUrl = webhookBase
+                    ? webhookBase.replace(/survey-completed$/, "survey-started")
+                    : null;
+
+                if (startedUrl) {
+                    fetch(startedUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            ...(webhookSecret ? { "X-Webhook-Secret": webhookSecret } : {}),
+                        },
+                        body: JSON.stringify({
+                            sessionId,
+                            contactId: (session as any).contact_id || null,
+                            outreachId: (session as any).outreach_id || null,
+                        }),
+                    }).catch((err) => {
+                        console.error("[survey-started webhook] Failed:", err.message);
+                    });
+                }
+            }
 
             return res.status(200).json(session);
         }
