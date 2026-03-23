@@ -39,7 +39,7 @@
 - [ ] Remove Email field (Keep Name)
 - [ ] Q#14 State Dropdown -> Searchable
 - [ ] Final Page: Certificate -> Badge + QR Code
-- [ ] Webhook trigger to nufounders.com
+- [x] ~~Webhook trigger to nufounders.com~~ — Implemented with awaited `fetch` + 5 s `AbortSignal.timeout` in `api/complete.ts` and `api/session.ts`
 
 ### High Priority
 

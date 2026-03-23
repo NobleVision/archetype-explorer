@@ -10,7 +10,7 @@ import { generatePromoCode } from "./lib/promo.js";
  * 1. Generates a unique promo code
  * 2. Marks the session as completed with archetype result
  * 3. Creates the promo_codes record
- * 4. Fires webhook to NuFounders main app (async, non-blocking)
+ * 4. Fires webhook to NuFounders main app (awaited with 5s timeout)
  * 5. Returns the completed session + promo code
  */
 export default async function handler(req: VercelRequest, res: VercelResponse) {

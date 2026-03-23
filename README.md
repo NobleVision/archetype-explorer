@@ -129,7 +129,7 @@ archetype-explorer/
 - **`PromoCodeDisplay.tsx`**: Large code display, clipboard copy with toast confirmation, "Don't lose this code!" callout
 - **`Confetti.tsx`**: Canvas-based confetti celebration on survey completion
 - **Referral system**: Shareable referral link (`?ref=<sessionId>`) with copy-to-clipboard
-- **Completion webhook**: Fires async webhook to NuFounders main app on survey completion
+- **Completion webhook**: Fires webhook to NuFounders main app on survey completion (awaited with 5 s `AbortSignal.timeout` to prevent Vercel from terminating the request before the webhook resolves)
 
 ### Phase 4 — AI-Powered Results & Certificate ✅
 
@@ -558,8 +558,10 @@ The survey app tracks comprehensive funnel analytics via `src/lib/analytics.ts` 
 | ------- | ----------------------------- | -------------------------------------------------------------------- |
 | `GET`   | `/api/session?id=<sessionId>` | Retrieve session state (answers, step, user info, completion status) |
 | `POST`  | `/api/session`                | Create new session with nanoid, optional `referrerId`                |
-| `PUT`   | `/api/session`                | Save/update answers and current step                                 |
+| `PUT`   | `/api/session`                | Save/update answers and current step; fires `survey-started` webhook on step-3 threshold crossing |
 | `PATCH` | `/api/session`                | Save user info (name, email)                                         |
+
+> **Webhook behavior** — The `survey-started` webhook is **awaited** with a **5-second timeout** (`AbortSignal.timeout(5000)`). If the downstream endpoint does not respond within 5 s the call is aborted and the error is logged, but the API still returns a successful response to the client. This prevents Vercel from killing the serverless function while the webhook is in-flight.
 
 ### Survey Completion (`api/complete.ts`)
 
@@ -569,6 +571,8 @@ The survey app tracks comprehensive funnel analytics via `src/lib/analytics.ts` 
 
 **Request body**: `{ sessionId, archetypeResult, archetypeData, isRetake }`
 **Response**: `{ success, promoCode, session }`
+
+> **Webhook behavior** — The `survey.completed` (or `survey.retake_completed`) webhook is **awaited** with a **5-second timeout** (`AbortSignal.timeout(5000)`). If the downstream endpoint does not respond within 5 s the call is aborted and the error is logged, but the API still returns a successful response to the client. This prevents Vercel from killing the serverless function while the webhook is in-flight.
 
 ### AI Results Generation (`api/generate-results.ts`)
 
@@ -670,3 +674,8 @@ git push origin main
 ```
 
 Ensure all environment variables are set in the Vercel dashboard.
+
+#### Vercel Serverless Considerations
+
+- **Webhook calls are awaited** — Both `api/complete.ts` (`survey.completed`) and `api/session.ts` (`survey-started`) use `await fetch(…)` with `AbortSignal.timeout(5000)` (5 s). This ensures Vercel does not terminate the function while a webhook request is still in-flight. If the downstream webhook does not respond within 5 s, the call is aborted gracefully and the error is logged — the API response to the client is **not** affected.
+- **Why not fire-and-forget?** — Vercel serverless functions shut down as soon as the response is sent. A non-awaited `fetch()` (fire-and-forget) would be killed before the HTTP request completes, making webhook delivery unreliable. Awaiting with a short timeout guarantees delivery under normal conditions while capping added latency at 5 s.
