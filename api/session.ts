@@ -100,20 +100,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     : null;
 
                 if (startedUrl) {
-                    fetch(startedUrl, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            ...(webhookSecret ? { "X-Webhook-Secret": webhookSecret } : {}),
-                        },
-                        body: JSON.stringify({
-                            sessionId,
-                            contactId: (session as any).contact_id || null,
-                            outreachId: (session as any).outreach_id || null,
-                        }),
-                    }).catch((err) => {
+                    try {
+                        const startedResp = await fetch(startedUrl, {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                ...(webhookSecret ? { "X-Webhook-Secret": webhookSecret } : {}),
+                            },
+                            body: JSON.stringify({
+                                sessionId,
+                                contactId: (session as any).contact_id || null,
+                                outreachId: (session as any).outreach_id || null,
+                            }),
+                            signal: AbortSignal.timeout(5000),
+                        });
+                        console.log(`[survey-started webhook] Response: ${startedResp.status}`);
+                    } catch (err: any) {
                         console.error("[survey-started webhook] Failed:", err.message);
-                    });
+                    }
                 }
             }
 

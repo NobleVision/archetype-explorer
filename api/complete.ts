@@ -62,38 +62,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             expiresAt,
         });
 
-        // 4. Fire webhook (async, non-blocking)
+        // 4. Fire webhook (awaited with 5s timeout to prevent Vercel from killing the request)
         const webhookUrl = process.env.NUFOUNDERS_WEBHOOK_URL;
         const webhookSecret = process.env.WEBHOOK_SECRET;
 
         if (webhookUrl) {
             console.log(`[webhook] Firing survey-completed to ${webhookUrl}`);
-            fetch(webhookUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(webhookSecret ? { "X-Webhook-Secret": webhookSecret } : {}),
-                },
-                body: JSON.stringify({
-                    event: isRetake ? "survey.retake_completed" : "survey.completed",
-                    sessionId,
-                    archetypeResult,
-                    promoCode,
-                    name: (session as any).name,
-                    email: (session as any).email,
-                    contactId: (session as any).contact_id || null,
-                    outreachId: (session as any).outreach_id || null,
-                    completedAt: new Date().toISOString(),
-                }),
-            }).then(async (resp) => {
-                console.log(`[webhook] survey-completed response: ${resp.status} ${resp.statusText}`);
-                if (!resp.ok) {
-                    const body = await resp.text().catch(() => "");
+            try {
+                const webhookResp = await fetch(webhookUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...(webhookSecret ? { "X-Webhook-Secret": webhookSecret } : {}),
+                    },
+                    body: JSON.stringify({
+                        event: isRetake ? "survey.retake_completed" : "survey.completed",
+                        sessionId,
+                        archetypeResult,
+                        promoCode,
+                        name: (session as any).name,
+                        email: (session as any).email,
+                        contactId: (session as any).contact_id || null,
+                        outreachId: (session as any).outreach_id || null,
+                        completedAt: new Date().toISOString(),
+                    }),
+                    signal: AbortSignal.timeout(5000),
+                });
+                console.log(`[webhook] survey-completed response: ${webhookResp.status} ${webhookResp.statusText}`);
+                if (!webhookResp.ok) {
+                    const body = await webhookResp.text().catch(() => "");
                     console.error(`[webhook] survey-completed error body: ${body}`);
                 }
-            }).catch((err) => {
+            } catch (err: any) {
                 console.error("[webhook] Failed to fire survey-completed:", err.message);
-            });
+            }
         } else {
             console.warn("[webhook] NUFOUNDERS_WEBHOOK_URL not configured, skipping survey-completed webhook");
         }
