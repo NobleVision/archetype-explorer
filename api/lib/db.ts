@@ -19,11 +19,12 @@ export async function createSession(data: {
     sourceChannel?: string;
     contactId?: string;
     outreachId?: string;
+    email?: string;
 }) {
     const sql = getDb();
     const rows = await sql`
-    INSERT INTO survey_sessions (session_id, ip_address, user_agent, referrer_id, city, region, country, answers, current_step, source_channel, contact_id, outreach_id)
-    VALUES (${data.sessionId}, ${data.ipAddress ?? null}, ${data.userAgent ?? null}, ${data.referrerId ?? null}, ${data.city ?? null}, ${data.region ?? null}, ${data.country ?? null}, ${JSON.stringify({})}::jsonb, 0, ${data.sourceChannel ?? null}, ${data.contactId ? parseInt(data.contactId, 10) : null}, ${data.outreachId ? parseInt(data.outreachId, 10) : null})
+    INSERT INTO survey_sessions (session_id, ip_address, user_agent, referrer_id, city, region, country, answers, current_step, source_channel, contact_id, outreach_id, email)
+    VALUES (${data.sessionId}, ${data.ipAddress ?? null}, ${data.userAgent ?? null}, ${data.referrerId ?? null}, ${data.city ?? null}, ${data.region ?? null}, ${data.country ?? null}, ${JSON.stringify({})}::jsonb, 0, ${data.sourceChannel ?? null}, ${data.contactId ? parseInt(data.contactId, 10) : null}, ${data.outreachId ? parseInt(data.outreachId, 10) : null}, ${data.email ?? null})
     RETURNING *
   `;
     return rows[0];

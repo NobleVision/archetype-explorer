@@ -82,6 +82,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         promoCode,
                         name: (session as any).name,
                         email: (session as any).email,
+                        phoneNumber: (session as any).phone_number || null,
+                        smsConsent: (session as any).sms_consent || false,
                         contactId: (session as any).contact_id || null,
                         outreachId: (session as any).outreach_id || null,
                         completedAt: new Date().toISOString(),

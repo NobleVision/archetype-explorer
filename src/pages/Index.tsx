@@ -101,19 +101,8 @@ const Index = () => {
       const result = classifyArchetype(answers);
       setArchetype(result);
 
-      // Webhook trigger
-      fetch("https://nufounders.com/api/webhooks/survey-complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            sessionId: session?.sessionId,
-            name: session?.name,
-            email: session?.email,
-            archetype: result.id,
-            answers: answers,
-            timestamp: new Date().toISOString()
-        })
-      }).catch(err => console.error("Webhook failed", err));
+      // Server-side webhook fires from api/complete.ts with full session data
+      // (phone, SMS consent, email, etc.) — no client-side webhook needed
 
       // Complete survey on backend + get promo code
       const code = await completeSurvey(result.id, {

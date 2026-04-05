@@ -120,13 +120,20 @@ export function useSession() {
                 const sourceChannel = urlParams.get("src") || undefined;
                 const contactId = urlParams.get("cid") || undefined;
                 const outreachId = urlParams.get("oid") || undefined;
+                const emailFromUrl = urlParams.get("email") || undefined;
                 const previousArchetype = localStorage.getItem("nf_previous_archetype") || undefined;
+
+                // If email came from URL, pre-populate in localStorage
+                if (emailFromUrl) {
+                    const existing = JSON.parse(localStorage.getItem(USER_INFO_KEY) || "{}");
+                    localStorage.setItem(USER_INFO_KEY, JSON.stringify({ ...existing, email: emailFromUrl }));
+                }
 
                 try {
                     const res = await fetch(`${API_BASE}/session`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ referrerId, sourceChannel, contactId, outreachId }),
+                        body: JSON.stringify({ referrerId, sourceChannel, contactId, outreachId, email: emailFromUrl }),
                     });
 
                     if (res.ok) {
@@ -140,6 +147,7 @@ export function useSession() {
                             currentStep: 0,
                             answers: {},
                             isCompleted: false,
+                            email: emailFromUrl,
                             previousArchetype,
                             isRetake: !!previousArchetype,
                             contactId,

@@ -1,8 +1,12 @@
 /**
  * api/lib/ai.ts — AI summary generation for survey results.
  *
- * Uses OpenAI Chat Completions API directly (no shared wrapper with main app).
- * Generates a personalized executive summary based on archetype + survey answers.
+ * Uses Z.ai GLM-5.1 (Coding Plan endpoint) for AI generation.
+ * GLM-5.1 is a reasoning model — responses may include a
+ * `reasoning_content` field alongside `content`.
+ *
+ * Endpoint: https://api.z.ai/api/coding/paas/v4/chat/completions
+ * Do NOT use the standard /api/paas/v4 path (missing /coding/).
  */
 
 interface SummaryInput {
@@ -98,9 +102,9 @@ function humanize(questionId: string, value: unknown): string {
 export async function generateAISummary(
     input: SummaryInput
 ): Promise<SummaryResult> {
-    const apiKey = process.env.OPENAI_API;
+    const apiKey = process.env.ZAI_API_KEY;
     if (!apiKey) {
-        throw new Error("OPENAI_API key is not configured");
+        throw new Error("ZAI_API_KEY is not configured");
     }
 
     // Build a readable profile from the answers
@@ -140,39 +144,45 @@ Return a JSON object with this structure:
   "encouragement": "A warm, specific closing message (2-3 sentences)"
 }`;
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions", {
         method: "POST",
         headers: {
             Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
         },
         body: JSON.stringify({
-            model: "gpt-4o-mini",
+            model: "GLM-5.1",
             messages: [
                 {
                     role: "system",
                     content:
-                        "You are a career analyst who generates personalized, empowering executive summaries for displaced professionals exploring entrepreneurship. Always return valid JSON.",
+                        "You are a career analyst who generates personalized, empowering executive summaries for displaced professionals exploring entrepreneurship. You MUST return ONLY valid raw JSON — no markdown fences, no backticks, no explanation text. Output the JSON object directly.",
                 },
                 { role: "user", content: prompt },
             ],
-            response_format: { type: "json_object" },
             temperature: 0.7,
-            max_tokens: 1200,
+            max_tokens: 4096,
         }),
     });
 
     if (!response.ok) {
         const err = await response.text();
-        console.error("[AI] OpenAI API error:", response.status, err);
-        throw new Error(`OpenAI API error: ${response.status}`);
+        console.error("[AI] Z.ai API error:", response.status, err);
+        throw new Error(`Z.ai API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const message = data.choices?.[0]?.message;
+    let content = message?.content || message?.reasoning_content || "";
 
     if (!content) {
-        throw new Error("No content in OpenAI response");
+        throw new Error("No content in Z.ai response");
+    }
+
+    // Strip markdown code fences if present (reasoning models may wrap JSON)
+    content = content.trim();
+    if (content.startsWith("```")) {
+        content = content.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
     }
 
     return JSON.parse(content) as SummaryResult;

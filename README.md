@@ -47,7 +47,7 @@ archetype-explorer/
 │   ├── migrate.ts                     # Database migration utility
 │   ├── session.ts                     # Session CRUD (create, retrieve, update)
 │   └── lib/
-│       ├── ai.ts                      # OpenAI integration for personalized summaries
+│       ├── ai.ts                      # Z.ai GLM-5.1 integration for personalized summaries
 │       ├── certificate.ts             # Cloudinary certificate image generation
 │       ├── db.ts                      # Neon PostgreSQL connection helper
 │       └── promo.ts                   # Promo code generation utility
@@ -120,7 +120,8 @@ archetype-explorer/
 
 ### Phase 2 — Pre-Survey Name/Email & Branding ✅
 
-- **`UserInfoScreen.tsx`**: Name (required) + email (optional with Zod validation) capture between Welcome and Survey
+- **`UserInfoScreen.tsx`**: Name (required) + email (required unless pre-populated from invite URL) capture between Welcome and Survey
+- **Email pre-population**: `?email=` URL parameter auto-fills email and skips the email field in the survey
 - **NuFounders branding**: `index.html` title, description, OG tags, Twitter cards, and favicon all updated
 - **Logo display**: NuFounders logo on welcome screen from `/images/logo.jpeg`
 
@@ -133,7 +134,8 @@ archetype-explorer/
 
 ### Phase 4 — AI-Powered Results & Certificate ✅
 
-- **`api/generate-results.ts`**: OpenAI-powered executive summary generation based on archetype + answers
+- **`api/generate-results.ts`**: Z.ai GLM-5.1-powered executive summary generation based on archetype + answers
+- **`api/lib/ai.ts`**: Z.ai Coding Plan endpoint (`/coding/paas/v4/chat/completions`) with reasoning model support (`reasoning_content` fallback)
 - **`api/lib/certificate.ts`**: Branded certificate image via Cloudinary text overlay
 - **`AISummaryCard.tsx`**: Displays personalized AI summary with loading states
 - **`CertificateCard.tsx`**: Certificate preview with download button

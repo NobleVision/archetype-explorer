@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // ── POST: Create new session ─────────────────────────────────────────
         if (req.method === "POST") {
-            const { referrerId, sourceChannel, contactId, outreachId } = req.body ?? {};
+            const { referrerId, sourceChannel, contactId, outreachId, email } = req.body ?? {};
             const sessionId = nanoid(24);
             const ipAddress =
                 (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
@@ -71,6 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 sourceChannel,
                 contactId,
                 outreachId,
+                email: email || undefined,
                 ...geoData
             });
 
