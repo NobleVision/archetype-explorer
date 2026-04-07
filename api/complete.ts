@@ -25,7 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     try {
-        const { sessionId, archetypeResult, archetypeData, isRetake } = req.body ?? {};
+        const { sessionId, archetypeResult, archetypeData, isRetake, trackingCode } = req.body ?? {};
 
         if (!sessionId || !archetypeResult) {
             return res.status(400).json({
@@ -86,6 +86,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                         smsConsent: (session as any).sms_consent || false,
                         contactId: (session as any).contact_id || null,
                         outreachId: (session as any).outreach_id || null,
+                        trackingCode: trackingCode || null,
                         completedAt: new Date().toISOString(),
                     }),
                     signal: AbortSignal.timeout(5000),

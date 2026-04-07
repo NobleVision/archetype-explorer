@@ -39,6 +39,7 @@ export interface SessionData {
     isRetake?: boolean;
     contactId?: string;
     outreachId?: string;
+    trackingCode?: string;
 }
 
 export function useSession() {
@@ -56,6 +57,7 @@ export function useSession() {
             try {
                 // Check for reset flag in URL
                 const urlParams = new URLSearchParams(window.location.search);
+                const trackingCodeFromUrl = urlParams.get("tc") || undefined;
                 if (urlParams.get("reset") === "true") {
                     localStorage.removeItem(SESSION_KEY);
                     localStorage.removeItem(ANSWERS_KEY);
@@ -89,6 +91,7 @@ export function useSession() {
                                 certificateUrl: data.certificate_url || undefined,
                                 contactId: data.contact_id?.toString() || undefined,
                                 outreachId: data.outreach_id?.toString() || undefined,
+                                trackingCode: trackingCodeFromUrl,
                             };
                             setSession(restored);
                             setLoading(false);
@@ -110,6 +113,7 @@ export function useSession() {
                         currentStep: localStep,
                         answers: localAnswers,
                         isCompleted: false,
+                        trackingCode: trackingCodeFromUrl,
                     });
                     setLoading(false);
                     return;
@@ -152,6 +156,7 @@ export function useSession() {
                             isRetake: !!previousArchetype,
                             contactId,
                             outreachId,
+                            trackingCode: trackingCodeFromUrl,
                         });
                         setLoading(false);
                         return;
@@ -168,6 +173,7 @@ export function useSession() {
                     currentStep: 0,
                     answers: {},
                     isCompleted: false,
+                    trackingCode: trackingCodeFromUrl,
                 });
             } catch (err: any) {
                 setError(err.message);
@@ -249,6 +255,7 @@ export function useSession() {
                         archetypeResult,
                         archetypeData,
                         isRetake: session.isRetake ?? false,
+                        trackingCode: session.trackingCode,
                     }),
                 });
 
