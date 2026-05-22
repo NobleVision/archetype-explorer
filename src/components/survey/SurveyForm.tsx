@@ -32,6 +32,8 @@ interface SurveyFormProps {
   initialStep?: number;
   onSaveProgress?: (answers: SurveyAnswers, step: number) => void;
   sessionId?: string;
+  /** Email already known (from invite URL or the user-info step) — when set we don't re-prompt for it. */
+  knownEmail?: string;
 }
 
 const SurveyForm = ({
@@ -40,6 +42,7 @@ const SurveyForm = ({
   initialStep,
   onSaveProgress,
   sessionId,
+  knownEmail,
 }: SurveyFormProps) => {
   const [currentStep, setCurrentStep] = useState(initialStep ?? 0);
   const [answers, setAnswers] = useState<SurveyAnswers>(initialAnswers ?? {});
@@ -72,9 +75,13 @@ const SurveyForm = ({
   const currentAnswer = answers[question.id];
 
   const emailRequiredOptions = ["yes_apply", "yes_learn_more", "maybe", "maybe_later"];
+  const hasKnownEmail = !!(knownEmail && knownEmail.trim());
   const needsEmail =
     question.type === "email-conditional" &&
     emailRequiredOptions.includes(currentAnswer as string);
+  // Only prompt for the email if we don't already have it (from the invite URL
+  // or the user-info step). Otherwise the selection alone is enough.
+  const needsEmailInput = needsEmail && !hasKnownEmail;
   const needsOtherText =
     question.id === "employment_status" && currentAnswer === "other";
 
@@ -83,7 +90,7 @@ const SurveyForm = ({
       ? Array.isArray(currentAnswer) && currentAnswer.length > 0
       : question.type === "email-conditional"
         ? needsEmail
-          ? email.trim().length > 0
+          ? hasKnownEmail || email.trim().length > 0
           : !!currentAnswer
         : needsOtherText
           ? otherText.trim().length > 0
@@ -137,8 +144,8 @@ const SurveyForm = ({
   const handleNext = () => {
     if (!hasAnswer) return;
 
-    // Validate email with Zod
-    if (question.type === "email-conditional" && needsEmail) {
+    // Validate email with Zod — only when we actually prompted for it.
+    if (question.type === "email-conditional" && needsEmailInput) {
       const result = emailSchema.safeParse(email.trim());
       if (!result.success) {
         setEmailError(result.error.errors[0].message);
@@ -147,10 +154,11 @@ const SurveyForm = ({
       setEmailError(null);
     }
 
-    // Build updated answers with email/other text
+    // Build updated answers with email/other text. Prefer the freshly-typed
+    // value, falling back to the already-known email when we didn't re-prompt.
     let updatedAnswers = { ...answers };
     if (question.type === "email-conditional" && needsEmail) {
-      updatedAnswers = { ...updatedAnswers, [question.id + "_email"]: email.trim() };
+      updatedAnswers = { ...updatedAnswers, [question.id + "_email"]: (email.trim() || knownEmail || "") };
     }
     if (needsOtherText) {
       updatedAnswers = { ...updatedAnswers, [question.id + "_other"]: otherText.trim() };
@@ -291,7 +299,7 @@ const SurveyForm = ({
             </motion.div>
           )}
 
-          {question.type === "email-conditional" && needsEmail && (
+          {question.type === "email-conditional" && needsEmailInput && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -340,7 +348,7 @@ const SurveyForm = ({
           disabled={!hasAnswer}
           className="gap-2 bg-gradient-accent text-accent-foreground hover:opacity-90 shadow-glow font-semibold px-6"
         >
-          {isLastStep ? "See My Results" : "Continue"}
+          {isLastStep ? "Complete Survey" : "Continue"}
           <ArrowRight className="w-4 h-4" />
         </Button>
       </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Lightbulb, RotateCcw, Share2, Copy, Check, Users, RefreshCw } from "lucide-react";
+import { Lightbulb, Share2, Copy, Check, Users, RefreshCw } from "lucide-react";
 import type { Archetype } from "@/data/archetypes";
 import type { AISummary } from "@/hooks/useSession";
 import type { SurveyAnswers } from "@/data/surveyQuestions";
@@ -27,7 +27,6 @@ interface ResultsViewProps {
 
 const ResultsView = ({
   archetype,
-  onRetake,
   promoCode,
   sessionId,
   aiSummary,
@@ -335,23 +334,6 @@ const ResultsView = ({
         </motion.div>
       )}
 
-      {/* Retake button */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
-        className="text-center"
-      >
-        <Button
-          id="retake-survey-btn"
-          variant="outline"
-          onClick={onRetake}
-          className="gap-2 text-muted-foreground hover:text-foreground"
-        >
-          <RotateCcw className="w-4 h-4" />
-          Retake Survey
-        </Button>
-      </motion.div>
     </div>
   );
 };

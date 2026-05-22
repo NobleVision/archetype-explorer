@@ -259,6 +259,7 @@ const Index = () => {
                   initialStep={session?.currentStep}
                   onSaveProgress={handleSaveProgress}
                   sessionId={session?.sessionId}
+                  knownEmail={session?.email}
                 />
               </motion.div>
             )}
